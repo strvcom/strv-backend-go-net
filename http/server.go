@@ -33,12 +33,17 @@ func NewServer(config *ServerConfig) *Server {
 		s.shutdownTimeout = to.ShutdownTimeout
 	}
 
+	s.server.RegisterOnShutdown(func() {
+		s.inShutdown <- struct{}{}
+	})
+
 	return s
 }
 
 type Server struct {
 	server http.Server
 
+	inShutdown      chan struct{}
 	shutdownTimeout time.Duration
 	waitForShutdown chan struct{}
 
@@ -46,15 +51,16 @@ type Server struct {
 }
 
 // Start calls ListenAndServe but returns error only if err != http.ErrServerClosed.
-// Passed context is used as base context of all http request and to shutdown server gracefully.
+// Passed context is used as base context of all http requests and to shutdown server gracefully.
 func (s *Server) Start(ctx context.Context) error {
 	s.server.BaseContext = func(_ net.Listener) context.Context {
 		return ctx
 	}
 
 	go func() {
-		<-ctx.Done()
+		<-s.inShutdown
 		s.waitForShutdown = make(chan struct{})
+		// NOTE: The context will be canceled when the server is shutdown.
 		s.beforeShutdown(ctx)
 		s.waitForShutdown <- struct{}{}
 	}()
@@ -81,7 +87,8 @@ func (s *Server) beforeShutdown(ctx context.Context) {
 
 	for _, f := range s.doBeforeShutdown {
 		go func(f ServerHookFunc, wg *sync.WaitGroup) {
-			f(ctx)
+			// TODO: We should probably handle this error somehow, or at least log warning that the hook failed.
+			_ = f(ctx)
 			wg.Done()
 		}(f, wg)
 	}

@@ -27,8 +27,8 @@ const (
 	ImageWebP ContentType = "image/webp"
 )
 
-func (c ContentType) WithCharset(t CharsetType) *ContentTypeWithCharset {
-	return &ContentTypeWithCharset{
+func (c ContentType) WithCharset(t CharsetType) ContentTypeWithCharset {
+	return ContentTypeWithCharset{
 		ContentType: c,
 		CharsetType: t,
 	}
@@ -39,7 +39,7 @@ type ContentTypeWithCharset struct {
 	CharsetType CharsetType
 }
 
-func (c *ContentTypeWithCharset) String() string {
+func (c ContentTypeWithCharset) String() string {
 	if c.CharsetType == "" {
 		return string(c.ContentType)
 	}
