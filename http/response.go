@@ -17,25 +17,28 @@ type ResponseOptions struct {
 	CharsetType CharsetType
 }
 
+type ResponseOption interface {
+	Apply(*ResponseOptions)
+}
+
+type HTTPStatusCode int
+
 func WriteResponse(
 	w http.ResponseWriter,
 	data any,
-	code int,
-	opts ...ResponseOptions,
+	code HTTPStatusCode,
+	opts ...ResponseOption,
 ) {
-	if len(opts) >= 2 {
-		panic("providing more than one option is forbidden")
+	o := &ResponseOptions{}
+	for _, opt := range opts {
+		opt.Apply(o)
 	}
-	if len(opts) == 0 {
-		opts = []ResponseOptions{DefaultResponseOptions}
-	}
-	o := opts[0]
 
 	w.Header().Set(
 		Header.ContentType,
 		o.ContentType.WithCharset(o.CharsetType).String(),
 	)
-	w.WriteHeader(code)
+	w.WriteHeader(int(code))
 
 	if o.EncodeFunc == nil || data == http.NoBody || code == http.StatusNoContent {
 		return
@@ -49,36 +52,38 @@ func WriteResponse(
 func WriteErrorResponse(
 	w http.ResponseWriter,
 	r ErrorResponse,
-	statusCode int,
+	code HTTPStatusCode,
 ) {
 	w.Header().Set(Header.ContentType, ApplicationJSON.WithCharset(UTF8).String())
-	w.WriteHeader(statusCode)
+	w.WriteHeader(int(code))
 
 	if err := EncodeJSON(w, r); err != nil {
 		panic(fmt.Errorf("reponse encoding: %w", err))
 	}
 }
 
-func NewErrorResponse(msg string, opts ...ErrorResponseOptions) ErrorResponse {
+func NewErrorResponse(msg string, opts ...ErrorResponseOption) ErrorResponse {
 	r := ErrorResponse{
 		Message: msg,
 	}
-	if len(opts) >= 2 {
-		panic("providing more than one option is forbidden")
-	}
-	if len(opts) == 0 {
-		return r
+	for _, opt := range opts {
+		opt.Apply(&r)
 	}
 
-	r.ErrorResponseOptions = opts[0]
 	return r
 }
 
-type ErrorResponse struct {
-	Message string `json:"error_message"`
-	ErrorResponseOptions
+type ErrorCode int
+
+func (c ErrorCode) Apply(r *ErrorResponse) {
+	r.ErrCode = c
 }
 
-type ErrorResponseOptions struct {
-	ErrCode int `json:"error_code,omitempty"`
+type ErrorResponse struct {
+	Message string    `json:"error_message"`
+	ErrCode ErrorCode `json:"error_code,omitempty"`
+}
+
+type ErrorResponseOption interface {
+	Apply(*ErrorResponse)
 }

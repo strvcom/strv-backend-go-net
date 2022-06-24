@@ -34,9 +34,18 @@ func (c ContentType) WithCharset(t CharsetType) ContentTypeWithCharset {
 	}
 }
 
+func (c ContentType) Apply(opts *ResponseOptions) {
+	opts.ContentType = ContentType(c)
+}
+
 type ContentTypeWithCharset struct {
 	ContentType ContentType
 	CharsetType CharsetType
+}
+
+func (c ContentTypeWithCharset) Apply(opts *ResponseOptions) {
+	opts.ContentType = ContentType(c.ContentType)
+	opts.CharsetType = CharsetType(c.CharsetType)
 }
 
 func (c ContentTypeWithCharset) String() string {
