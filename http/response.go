@@ -5,11 +5,15 @@ import (
 	"net/http"
 )
 
-var DefaultResponseOptions = ResponseOptions{
-	EncodeFunc:  EncodeJSON,
-	ContentType: ApplicationJSON,
-	CharsetType: UTF8,
-}
+var (
+	DefaultResponseOptions = ResponseOptions{
+		EncodeFunc:  EncodeJSON,
+		ContentType: ApplicationJSON,
+		CharsetType: UTF8,
+	}
+
+	DefaultErrorCode ErrorCode = "ERR_UNKNOWN"
+)
 
 type ResponseOptions struct {
 	EncodeFunc  EncodeFunc
@@ -54,6 +58,10 @@ func WriteErrorResponse(
 	r ErrorResponse,
 	code HTTPStatusCode,
 ) {
+	if r.ErrCode == "" {
+		r.ErrCode = DefaultErrorCode
+	}
+
 	w.Header().Set(Header.ContentType, ApplicationJSON.WithCharset(UTF8).String())
 	w.WriteHeader(int(code))
 
@@ -62,9 +70,9 @@ func WriteErrorResponse(
 	}
 }
 
-func NewErrorResponse(msg string, opts ...ErrorResponseOption) ErrorResponse {
+func NewErrorResponse(errCode ErrorCode, opts ...ErrorResponseOption) ErrorResponse {
 	r := ErrorResponse{
-		Message: msg,
+		ErrCode: errCode,
 	}
 	for _, opt := range opts {
 		opt.Apply(&r)
@@ -73,15 +81,17 @@ func NewErrorResponse(msg string, opts ...ErrorResponseOption) ErrorResponse {
 	return r
 }
 
-type ErrorCode int
+type ErrorCode string
 
-func (c ErrorCode) Apply(r *ErrorResponse) {
-	r.ErrCode = c
+type ErrorData map[string]any
+
+func (d ErrorData) Apply(r *ErrorResponse) {
+	r.ErrData = d
 }
 
 type ErrorResponse struct {
-	Message string    `json:"error_message"`
-	ErrCode ErrorCode `json:"error_code,omitempty"`
+	ErrCode ErrorCode `json:"error_code"`
+	ErrData ErrorData `json:"error_data,omitempty"`
 }
 
 type ErrorResponseOption interface {

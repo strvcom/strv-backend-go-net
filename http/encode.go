@@ -5,7 +5,8 @@ import (
 	"net/http"
 )
 
-type EncodeFunc func(http.ResponseWriter, any) error
+// EncodeFunc is a function that encodes data to the response writer.
+type EncodeFunc func(w http.ResponseWriter, data any) error
 
 func EncodeJSON(w http.ResponseWriter, data any) error {
 	return json.NewEncoder(w).Encode(data)
