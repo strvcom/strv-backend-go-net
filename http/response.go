@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -89,9 +90,28 @@ func (d ErrorData) Apply(r *ErrorResponse) {
 	r.ErrData = d
 }
 
+func (d *ErrorData) Unmarshal(data any) error {
+	if data == nil {
+		return errors.New("data must not be empty")
+	}
+
+	if e, ok := data.(ErrorData); ok {
+		*d = e
+	}
+	if e, ok := data.(map[string]any); ok {
+		*d = ErrorData(e)
+	}
+
+	if err := DecodeJSON(data, d); err != nil {
+		return fmt.Errorf("decoding: %w", err)
+	}
+
+	return nil
+}
+
 type ErrorResponse struct {
 	ErrCode ErrorCode `json:"error_code"`
-	ErrData ErrorData `json:"error_data,omitempty"`
+	ErrData any       `json:"error_data,omitempty"`
 }
 
 type ErrorResponseOption interface {

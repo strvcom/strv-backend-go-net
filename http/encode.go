@@ -1,7 +1,9 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -14,4 +16,18 @@ func EncodeJSON(w http.ResponseWriter, data any) error {
 
 func (EncodeFunc) Apply(o *ResponseOptions) {
 	o.EncodeFunc = EncodeJSON
+}
+
+func DecodeJSON(data any, v interface{}) error {
+	b, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	return json.NewDecoder(bytes.NewReader(b)).Decode(v)
+}
+
+func MustDecodeJSON(data any) {
+	if err := DecodeJSON(data, nil); err != nil {
+		panic(fmt.Errorf("decoding: %w", err))
+	}
 }
