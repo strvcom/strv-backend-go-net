@@ -12,7 +12,7 @@ func TestWriteResponse(t *testing.T) {
 	type args struct {
 		w    *httptest.ResponseRecorder
 		data any
-		code HTTPStatusCode
+		code int
 		opts []ResponseOption
 	}
 	tests := []struct {
@@ -45,7 +45,7 @@ func TestWriteErrorResponse(t *testing.T) {
 	type args struct {
 		w    *httptest.ResponseRecorder
 		r    ErrorResponse
-		code HTTPStatusCode
+		code int
 	}
 	tests := []struct {
 		name     string
@@ -60,7 +60,7 @@ func TestWriteErrorResponse(t *testing.T) {
 				code: http.StatusOK,
 			},
 			testFunc: func(t *testing.T, args args) {
-				assert.Equal(t, args.w.Code, DefaultErrorCode)
+				assert.Equal(t, args.w.Code, defaultErrorCode)
 			},
 		},
 	}

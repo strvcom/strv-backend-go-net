@@ -6,16 +6,6 @@ import (
 	"net/http"
 )
 
-var (
-	DefaultResponseOptions = ResponseOptions{
-		EncodeFunc:  EncodeJSON,
-		ContentType: ApplicationJSON,
-		CharsetType: UTF8,
-	}
-
-	DefaultErrorCode ErrorCode = "ERR_UNKNOWN"
-)
-
 type ResponseOptions struct {
 	EncodeFunc  EncodeFunc
 	ContentType ContentType
@@ -26,14 +16,12 @@ type ResponseOption interface {
 	Apply(*ResponseOptions)
 }
 
-type HTTPStatusCode int
-
 func WriteResponse(
 	w http.ResponseWriter,
 	data any,
-	code HTTPStatusCode,
+	code int,
 	opts ...ResponseOption,
-) {
+) error {
 	o := &ResponseOptions{}
 	for _, opt := range opts {
 		opt.Apply(o)
@@ -46,29 +34,33 @@ func WriteResponse(
 	w.WriteHeader(int(code))
 
 	if o.EncodeFunc == nil || data == http.NoBody || code == http.StatusNoContent {
-		return
+		return nil
 	}
 
 	if err := o.EncodeFunc(w, data); err != nil {
-		panic(fmt.Errorf("response encoding: %w", err))
+		return fmt.Errorf("response encoding: %w", err)
 	}
+
+	return nil
 }
 
 func WriteErrorResponse(
 	w http.ResponseWriter,
 	r ErrorResponse,
-	code HTTPStatusCode,
-) {
+	statusCode int,
+) error {
 	if r.ErrCode == "" {
-		r.ErrCode = DefaultErrorCode
+		r.ErrCode = defaultErrorCode
 	}
 
 	w.Header().Set(Header.ContentType, ApplicationJSON.WithCharset(UTF8).String())
-	w.WriteHeader(int(code))
+	w.WriteHeader(statusCode)
 
 	if err := EncodeJSON(w, r); err != nil {
-		panic(fmt.Errorf("reponse encoding: %w", err))
+		return fmt.Errorf("reponse encoding: %w", err)
 	}
+
+	return nil
 }
 
 func NewErrorResponse(errCode ErrorCode, opts ...ErrorResponseOption) ErrorResponse {
