@@ -14,8 +14,10 @@ func EncodeJSON(w http.ResponseWriter, data any) error {
 	return json.NewEncoder(w).Encode(data)
 }
 
-func (f EncodeFunc) Apply(o *ResponseOptions) {
-	o.EncodeFunc = f
+func WithEncodeFunc(fn EncodeFunc) ResponseOption {
+	return func(o *ResponseOptions) {
+		o.EncodeFunc = fn
+	}
 }
 
 func DecodeJSON(data any, v interface{}) error {

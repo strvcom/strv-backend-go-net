@@ -11,11 +11,9 @@ import (
 	"time"
 )
 
-var defaultLimits = &Limits{}
-
 func NewServer(config *ServerConfig) *Server {
 	if config.Limits == nil {
-		config.Limits = defaultLimits
+		config.Limits = &Limits{}
 	}
 
 	s := &Server{
@@ -25,16 +23,19 @@ func NewServer(config *ServerConfig) *Server {
 			MaxHeaderBytes: config.Limits.MaxHeaderBytes,
 		},
 		signalsListener:  make(chan os.Signal, 1),
+		shutdownTimeout:  &defaultShutdownTimeout,
 		waitForShutdown:  make(chan struct{}, 1),
 		doBeforeShutdown: config.Hooks.BeforeShutdown,
 	}
 	if to := config.Limits.Timeouts; to != nil {
-		s.server.ReadTimeout = to.ReadTimeout
-		s.server.ReadHeaderTimeout = to.ReadHeaderTimeout
-		s.server.WriteTimeout = to.WriteTimeout
-		s.server.IdleTimeout = to.IdleTimeout
+		s.server.ReadTimeout = to.ReadTimeout.Duration
+		s.server.ReadHeaderTimeout = to.ReadHeaderTimeout.Duration
+		s.server.WriteTimeout = to.WriteTimeout.Duration
+		s.server.IdleTimeout = to.IdleTimeout.Duration
 
-		s.shutdownTimeout = to.ShutdownTimeout
+		if to.ShutdownTimeout != nil {
+			s.shutdownTimeout = &to.ShutdownTimeout.Duration
+		}
 	}
 
 	s.server.RegisterOnShutdown(s.beforeShutdown)
@@ -45,7 +46,7 @@ type Server struct {
 	server http.Server
 
 	signalsListener chan os.Signal
-	shutdownTimeout time.Duration
+	shutdownTimeout *time.Duration
 	waitForShutdown chan struct{}
 
 	doBeforeShutdown []ServerHookFunc
@@ -55,6 +56,8 @@ type Server struct {
 // Passed context is used as base context of all http requests and to shutdown server gracefully.
 func (s *Server) Start(ctx context.Context) error {
 	cCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	s.server.BaseContext = func(_ net.Listener) context.Context {
 		return cCtx
 	}
@@ -74,23 +77,29 @@ func (s *Server) Start(ctx context.Context) error {
 	case <-s.signalsListener:
 		// TODO: Log signal received.
 	}
-	cancel()
 
-	// TODO: Log server shutdown error.
-	_ = s.server.Shutdown(context.Background())
+	if err := s.server.Shutdown(context.Background()); err != nil {
+		// TODO: Log server shutdown error.
+		return err
+	}
 	select {
 	case <-s.waitForShutdown:
 		return nil
-	case <-time.After(s.shutdownTimeout):
+	case <-time.After(*defaultTo(s.shutdownTimeout, &defaultShutdownTimeout)):
 		return ErrShutdownTimeout
 	}
 }
 
 func (s *Server) beforeShutdown() {
+	if len(s.doBeforeShutdown) == 0 || (s.shutdownTimeout != nil && *s.shutdownTimeout <= 0) {
+		s.waitForShutdown <- struct{}{}
+		return
+	}
+
 	wg := &sync.WaitGroup{}
 	wg.Add(len(s.doBeforeShutdown))
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.shutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), *defaultTo(s.shutdownTimeout, &defaultShutdownTimeout))
 	defer cancel()
 
 	for _, f := range s.doBeforeShutdown {

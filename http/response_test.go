@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,15 +22,68 @@ func TestWriteResponse(t *testing.T) {
 		testFunc func(*testing.T, args)
 	}{
 		{
-			name: "success:no-content",
+			name: "success:default-no-content",
 			args: args{
 				w:    httptest.NewRecorder(),
 				data: http.NoBody,
 				code: http.StatusNoContent,
 			},
 			testFunc: func(t *testing.T, args args) {
-				assert.Equal(t, args.w.Body, http.NoBody)
+				contentType := defaultResponseOptions.ContentType
+				charsetType := defaultResponseOptions.CharsetType
+
 				assert.Equal(t, args.w.Code, http.StatusNoContent)
+				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
+				assert.Equal(
+					t,
+					args.w.Header().Get(Header.ContentType),
+					contentType.WithCharset(charsetType).String(),
+				)
+			},
+		},
+		{
+			name: "success:no-content-image/gif-utf8",
+			args: args{
+				w:    httptest.NewRecorder(),
+				data: http.NoBody,
+				code: http.StatusNoContent,
+				opts: []ResponseOption{WithContentType(ImageGIF)},
+			},
+			testFunc: func(t *testing.T, args args) {
+				contentType := ImageGIF
+				charsetType := defaultResponseOptions.CharsetType
+
+				assert.Equal(t, args.w.Code, http.StatusNoContent)
+				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
+				assert.Equal(
+					t,
+					args.w.Header().Get(Header.ContentType),
+					contentType.WithCharset(charsetType).String(),
+				)
+			},
+		},
+		{
+			name: "success:no-content-image/gif-custom-charset",
+			args: args{
+				w:    httptest.NewRecorder(),
+				data: http.NoBody,
+				code: http.StatusNoContent,
+				opts: []ResponseOption{
+					WithContentType(ImageGIF),
+					WithCharsetType("custom"),
+				},
+			},
+			testFunc: func(t *testing.T, args args) {
+				contentType := ImageGIF
+				charsetType := CharsetType("custom")
+
+				assert.Equal(t, args.w.Code, http.StatusNoContent)
+				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
+				assert.Equal(
+					t,
+					args.w.Header().Get(Header.ContentType),
+					contentType.WithCharset(charsetType).String(),
+				)
 			},
 		},
 	}
@@ -44,8 +98,8 @@ func TestWriteResponse(t *testing.T) {
 func TestWriteErrorResponse(t *testing.T) {
 	type args struct {
 		w    *httptest.ResponseRecorder
-		r    ErrorResponse
 		code int
+		opts []ErrorResponseOption
 	}
 	tests := []struct {
 		name     string
@@ -56,17 +110,16 @@ func TestWriteErrorResponse(t *testing.T) {
 			name: "success:default-error-code",
 			args: args{
 				w:    httptest.NewRecorder(),
-				r:    ErrorResponse{},
-				code: http.StatusOK,
+				code: http.StatusInternalServerError,
 			},
 			testFunc: func(t *testing.T, args args) {
-				assert.Equal(t, args.w.Code, defaultErrorCode)
+				assert.Equal(t, args.w.Code, http.StatusInternalServerError)
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			WriteErrorResponse(tt.args.w, tt.args.r, tt.args.code)
+			WriteErrorResponse(tt.args.w, tt.args.code, tt.args.opts...)
 		})
 		tt.testFunc(t, tt.args)
 	}

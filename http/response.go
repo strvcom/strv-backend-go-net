@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 )
@@ -12,9 +11,7 @@ type ResponseOptions struct {
 	CharsetType CharsetType
 }
 
-type ResponseOption interface {
-	Apply(*ResponseOptions)
-}
+type ResponseOption func(*ResponseOptions)
 
 func WriteResponse(
 	w http.ResponseWriter,
@@ -22,16 +19,16 @@ func WriteResponse(
 	code int,
 	opts ...ResponseOption,
 ) error {
-	o := &ResponseOptions{}
+	o := defaultResponseOptions
 	for _, opt := range opts {
-		opt.Apply(o)
+		opt(&o)
 	}
 
 	w.Header().Set(
 		Header.ContentType,
 		o.ContentType.WithCharset(o.CharsetType).String(),
 	)
-	w.WriteHeader(int(code))
+	w.WriteHeader(code)
 
 	if o.EncodeFunc == nil || data == http.NoBody || code == http.StatusNoContent {
 		return nil
@@ -44,68 +41,65 @@ func WriteResponse(
 	return nil
 }
 
+func WithContentType(c ContentType) ResponseOption {
+	return func(opts *ResponseOptions) {
+		opts.ContentType = c
+	}
+}
+
+func WithCharsetType(c CharsetType) ResponseOption {
+	return func(opts *ResponseOptions) {
+		opts.CharsetType = c
+	}
+}
+
 func WriteErrorResponse(
 	w http.ResponseWriter,
-	r ErrorResponse,
-	statusCode int,
+	code int,
+	opts ...ErrorResponseOption,
 ) error {
-	if r.ErrCode == "" {
-		r.ErrCode = defaultErrorCode
-	}
-
-	w.Header().Set(Header.ContentType, ApplicationJSON.WithCharset(UTF8).String())
-	w.WriteHeader(statusCode)
-
-	if err := EncodeJSON(w, r); err != nil {
-		return fmt.Errorf("reponse encoding: %w", err)
-	}
-
-	return nil
-}
-
-func NewErrorResponse(errCode ErrorCode, opts ...ErrorResponseOption) ErrorResponse {
-	r := ErrorResponse{
-		ErrCode: errCode,
+	o := &ErrorResponseOptions{
+		ErrCode:         defaultErrorCode,
+		ResponseOptions: defaultResponseOptions,
 	}
 	for _, opt := range opts {
-		opt.Apply(&r)
+		opt(o)
 	}
 
-	return r
-}
+	w.Header().Set(
+		Header.ContentType,
+		o.ContentType.WithCharset(o.CharsetType).String(),
+	)
+	w.WriteHeader(code)
 
-type ErrorCode string
-
-type ErrorData map[string]any
-
-func (d ErrorData) Apply(r *ErrorResponse) {
-	r.ErrData = d
-}
-
-func (d *ErrorData) Unmarshal(data any) error {
-	if data == nil {
-		return errors.New("data must not be empty")
+	if o.EncodeFunc == nil {
+		return nil
 	}
 
-	if e, ok := data.(ErrorData); ok {
-		*d = e
-	}
-	if e, ok := data.(map[string]any); ok {
-		*d = ErrorData(e)
-	}
-
-	if err := DecodeJSON(data, d); err != nil {
-		return fmt.Errorf("decoding: %w", err)
+	if err := o.EncodeFunc(w, o); err != nil {
+		return fmt.Errorf("response encoding: %w", err)
 	}
 
 	return nil
 }
 
-type ErrorResponse struct {
-	ErrCode ErrorCode `json:"error_code"`
-	ErrData any       `json:"error_data,omitempty"`
+type ErrorResponseOptions struct {
+	ResponseOptions
+
+	ErrCode string `json:"error_code"`
+	ErrData any    `json:"error_data,omitempty"`
 }
 
-type ErrorResponseOption interface {
-	Apply(*ErrorResponse)
+type ErrorResponseOption func(*ErrorResponseOptions)
+
+func WithErrorCode(code string) ErrorResponseOption {
+	return func(o *ErrorResponseOptions) {
+		o.ErrCode = code
+	}
+}
+
+func WithErrorData(data any) ErrorResponseOption {
+	return func(o *ErrorResponseOptions) {
+		o.ErrData = data
+	}
 }
