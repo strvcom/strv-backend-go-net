@@ -16,7 +16,7 @@ type ResponseOption func(*ResponseOptions)
 func WriteResponse(
 	w http.ResponseWriter,
 	data any,
-	code int,
+	statusCode int,
 	opts ...ResponseOption,
 ) error {
 	o := defaultResponseOptions
@@ -28,9 +28,9 @@ func WriteResponse(
 		Header.ContentType,
 		o.ContentType.WithCharset(o.CharsetType).String(),
 	)
-	w.WriteHeader(code)
+	w.WriteHeader(statusCode)
 
-	if o.EncodeFunc == nil || data == http.NoBody || code == http.StatusNoContent {
+	if o.EncodeFunc == nil || data == http.NoBody || statusCode == http.StatusNoContent {
 		return nil
 	}
 
@@ -55,13 +55,10 @@ func WithCharsetType(c CharsetType) ResponseOption {
 
 func WriteErrorResponse(
 	w http.ResponseWriter,
-	code int,
+	statusCode int,
 	opts ...ErrorResponseOption,
 ) error {
-	o := &ErrorResponseOptions{
-		ErrCode:         defaultErrorCode,
-		ResponseOptions: defaultResponseOptions,
-	}
+	o := &defaultErrorOptions
 	for _, opt := range opts {
 		opt(o)
 	}
@@ -70,7 +67,7 @@ func WriteErrorResponse(
 		Header.ContentType,
 		o.ContentType.WithCharset(o.CharsetType).String(),
 	)
-	w.WriteHeader(code)
+	w.WriteHeader(statusCode)
 
 	if o.EncodeFunc == nil {
 		return nil
@@ -84,7 +81,7 @@ func WriteErrorResponse(
 }
 
 type ErrorResponseOptions struct {
-	ResponseOptions
+	ResponseOptions `json:"-"`
 
 	ErrCode string `json:"error_code"`
 	ErrData any    `json:"error_data,omitempty"`

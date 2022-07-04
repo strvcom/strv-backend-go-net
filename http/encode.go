@@ -20,7 +20,8 @@ func WithEncodeFunc(fn EncodeFunc) ResponseOption {
 	}
 }
 
-func DecodeJSON(data any, v interface{}) error {
+// DecodeJSON decodes data using JSON marshalling into the type of parameter v.
+func DecodeJSON(data any, v any) error {
 	b, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -28,8 +29,9 @@ func DecodeJSON(data any, v interface{}) error {
 	return json.NewDecoder(bytes.NewReader(b)).Decode(v)
 }
 
-func MustDecodeJSON(data any) {
-	if err := DecodeJSON(data, nil); err != nil {
+// MustDecodeJSON calls DecodeJSON and panics on error.
+func MustDecodeJSON(data any, v any) {
+	if err := DecodeJSON(data, v); err != nil {
 		panic(fmt.Errorf("decoding: %w", err))
 	}
 }

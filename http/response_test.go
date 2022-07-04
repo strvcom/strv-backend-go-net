@@ -17,9 +17,9 @@ func TestWriteResponse(t *testing.T) {
 		opts []ResponseOption
 	}
 	tests := []struct {
-		name     string
-		args     args
-		testFunc func(*testing.T, args)
+		name   string
+		args   args
+		testFn func(*testing.T, args)
 	}{
 		{
 			name: "success:default-no-content",
@@ -28,7 +28,7 @@ func TestWriteResponse(t *testing.T) {
 				data: http.NoBody,
 				code: http.StatusNoContent,
 			},
-			testFunc: func(t *testing.T, args args) {
+			testFn: func(t *testing.T, args args) {
 				contentType := defaultResponseOptions.ContentType
 				charsetType := defaultResponseOptions.CharsetType
 
@@ -49,7 +49,7 @@ func TestWriteResponse(t *testing.T) {
 				code: http.StatusNoContent,
 				opts: []ResponseOption{WithContentType(ImageGIF)},
 			},
-			testFunc: func(t *testing.T, args args) {
+			testFn: func(t *testing.T, args args) {
 				contentType := ImageGIF
 				charsetType := defaultResponseOptions.CharsetType
 
@@ -73,7 +73,7 @@ func TestWriteResponse(t *testing.T) {
 					WithCharsetType("custom"),
 				},
 			},
-			testFunc: func(t *testing.T, args args) {
+			testFn: func(t *testing.T, args args) {
 				contentType := ImageGIF
 				charsetType := CharsetType("custom")
 
@@ -90,8 +90,8 @@ func TestWriteResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			WriteResponse(tt.args.w, tt.args.data, tt.args.code, tt.args.opts...)
+			tt.testFn(t, tt.args)
 		})
-		tt.testFunc(t, tt.args)
 	}
 }
 
@@ -102,9 +102,9 @@ func TestWriteErrorResponse(t *testing.T) {
 		opts []ErrorResponseOption
 	}
 	tests := []struct {
-		name     string
-		args     args
-		testFunc func(*testing.T, args)
+		name   string
+		args   args
+		testFn func(*testing.T, args)
 	}{
 		{
 			name: "success:default-error-code",
@@ -112,7 +112,7 @@ func TestWriteErrorResponse(t *testing.T) {
 				w:    httptest.NewRecorder(),
 				code: http.StatusInternalServerError,
 			},
-			testFunc: func(t *testing.T, args args) {
+			testFn: func(t *testing.T, args args) {
 				assert.Equal(t, args.w.Code, http.StatusInternalServerError)
 			},
 		},
@@ -120,7 +120,7 @@ func TestWriteErrorResponse(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			WriteErrorResponse(tt.args.w, tt.args.code, tt.args.opts...)
+			tt.testFn(t, tt.args)
 		})
-		tt.testFunc(t, tt.args)
 	}
 }

@@ -13,7 +13,14 @@ var (
 	}
 	defaultShutdownTimeout = 30 * time.Second
 
-	defaultErrorCode string = "ERR_UNKNOWN"
+	defaultErrorOptions = ErrorResponseOptions{
+		ErrCode: "ERR_UNKNOWN",
+		ResponseOptions: ResponseOptions{
+			EncodeFunc:  EncodeJSON,
+			ContentType: ApplicationJSON,
+			CharsetType: UTF8,
+		},
+	}
 )
 
 func defaultTo[T any](value T, defaultValue T) T {
