@@ -6,14 +6,19 @@ import (
 )
 
 var (
-	defaultResponseOptions = ResponseOptions{
+	defaultShutdownTimeout = 30 * time.Second
+)
+
+func defaultResponseOptions() ResponseOptions {
+	return ResponseOptions{
 		EncodeFunc:  EncodeJSON,
 		ContentType: ApplicationJSON,
 		CharsetType: UTF8,
 	}
-	defaultShutdownTimeout = 30 * time.Second
+}
 
-	defaultErrorOptions = ErrorResponseOptions{
+func defaultErrorOptions() ErrorResponseOptions {
+	return ErrorResponseOptions{
 		ErrCode: "ERR_UNKNOWN",
 		ResponseOptions: ResponseOptions{
 			EncodeFunc:  EncodeJSON,
@@ -21,7 +26,7 @@ var (
 			CharsetType: UTF8,
 		},
 	}
-)
+}
 
 func defaultTo[T any](value T, defaultValue T) T {
 	if reflect.ValueOf(value).IsNil() {
