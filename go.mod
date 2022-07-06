@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/stretchr/testify v1.7.5
+	go.strv.io/time v0.0.0-20220704134925-b54c54c58461
 )
 
 require (

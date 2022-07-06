@@ -17,7 +17,7 @@ func NewServer(config *ServerConfig) *Server {
 	}
 
 	s := &Server{
-		server: http.Server{
+		server: &http.Server{
 			Addr:           config.Addr,
 			Handler:        config.Handler,
 			MaxHeaderBytes: config.Limits.MaxHeaderBytes,
@@ -43,7 +43,7 @@ func NewServer(config *ServerConfig) *Server {
 }
 
 type Server struct {
-	server http.Server
+	server *http.Server
 
 	signalsListener chan os.Signal
 	shutdownTimeout *time.Duration

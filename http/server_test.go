@@ -65,7 +65,7 @@ func TestNewServer(t *testing.T) {
 			},
 			want: func() *Server {
 				s := &Server{
-					server:           http.Server{},
+					server:           &http.Server{},
 					shutdownTimeout:  &defaultShutdownTimeout,
 					doBeforeShutdown: []ServerHookFunc(nil),
 				}
@@ -76,7 +76,7 @@ func TestNewServer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewServer((tt.args.config))
+			s := NewServer(tt.args.config)
 			assert.IsTypef(t, tt.want, s, "NewServer(%v) = %v, want %v", tt.args.config, s, tt.want)
 		})
 	}
@@ -87,7 +87,7 @@ func TestServer_Start(t *testing.T) {
 	defaultShutdownTimeout = 1 * time.Second
 
 	type fields struct {
-		server           http.Server
+		server           *http.Server
 		signalsListener  chan os.Signal
 		shutdownTimeout  *time.Duration
 		waitForShutdown  chan struct{}
@@ -98,19 +98,19 @@ func TestServer_Start(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		fields  fields
+		fields  *fields
 		args    args
-		testFn  func(*testing.T, args, fields)
+		testFn  func(*testing.T, args, *fields)
 		wantErr error
 	}{
 		{
 			name: "success:start-server-and-cancel-context",
 			args: args{ctx: newCancellableContext(context.TODO())},
-			testFn: func(t *testing.T, args args, _ fields) {
+			testFn: func(t *testing.T, args args, _ *fields) {
 				args.ctx.Cancel()
 			},
-			fields: fields{
-				server:           http.Server{},
+			fields: &fields{
+				server:           &http.Server{},
 				signalsListener:  make(chan os.Signal, 1),
 				waitForShutdown:  make(chan struct{}, 1),
 				doBeforeShutdown: []ServerHookFunc{},
@@ -120,11 +120,11 @@ func TestServer_Start(t *testing.T) {
 		{
 			name: "success:start-server-and-kill",
 			args: args{ctx: newCancellableContext(context.TODO())},
-			testFn: func(t *testing.T, _ args, fields fields) {
+			testFn: func(t *testing.T, _ args, fields *fields) {
 				fields.signalsListener <- syscall.SIGKILL
 			},
-			fields: fields{
-				server:           http.Server{},
+			fields: &fields{
+				server:           &http.Server{},
 				signalsListener:  make(chan os.Signal, 1),
 				waitForShutdown:  make(chan struct{}, 1),
 				doBeforeShutdown: []ServerHookFunc{},
@@ -134,11 +134,11 @@ func TestServer_Start(t *testing.T) {
 		{
 			name: "success:start-server-and-wait-for-shutdown",
 			args: args{ctx: newCancellableContext(context.TODO())},
-			testFn: func(t *testing.T, _ args, fields fields) {
+			testFn: func(t *testing.T, _ args, fields *fields) {
 				fields.signalsListener <- syscall.SIGKILL
 			},
-			fields: fields{
-				server:          http.Server{},
+			fields: &fields{
+				server:          &http.Server{},
 				signalsListener: make(chan os.Signal, 1),
 				waitForShutdown: make(chan struct{}, 1),
 				doBeforeShutdown: []ServerHookFunc{

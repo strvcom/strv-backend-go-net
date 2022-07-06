@@ -19,7 +19,7 @@ func WriteResponse(
 	statusCode int,
 	opts ...ResponseOption,
 ) error {
-	o := defaultResponseOptions
+	o := defaultResponseOptions()
 	for _, opt := range opts {
 		opt(&o)
 	}
@@ -58,9 +58,9 @@ func WriteErrorResponse(
 	statusCode int,
 	opts ...ErrorResponseOption,
 ) error {
-	o := &defaultErrorOptions
+	o := defaultErrorOptions()
 	for _, opt := range opts {
-		opt(o)
+		opt(&o)
 	}
 
 	w.Header().Set(
