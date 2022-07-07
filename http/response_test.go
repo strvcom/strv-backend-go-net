@@ -29,8 +29,8 @@ func TestWriteResponse(t *testing.T) {
 				code: http.StatusNoContent,
 			},
 			testFn: func(t *testing.T, args args) {
-				contentType := defaultResponseOptions.ContentType
-				charsetType := defaultResponseOptions.CharsetType
+				contentType := defaultResponseOptions().ContentType
+				charsetType := defaultResponseOptions().CharsetType
 
 				assert.Equal(t, args.w.Code, http.StatusNoContent)
 				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
@@ -51,7 +51,7 @@ func TestWriteResponse(t *testing.T) {
 			},
 			testFn: func(t *testing.T, args args) {
 				contentType := ImageGIF
-				charsetType := defaultResponseOptions.CharsetType
+				charsetType := defaultResponseOptions().CharsetType
 
 				assert.Equal(t, args.w.Code, http.StatusNoContent)
 				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
