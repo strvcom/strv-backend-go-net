@@ -29,8 +29,8 @@ func TestWriteResponse(t *testing.T) {
 				code: http.StatusNoContent,
 			},
 			testFn: func(t *testing.T, args args) {
-				contentType := defaultResponseOptions.ContentType
-				charsetType := defaultResponseOptions.CharsetType
+				contentType := defaultResponseOptions().ContentType
+				charsetType := defaultResponseOptions().CharsetType
 
 				assert.Equal(t, args.w.Code, http.StatusNoContent)
 				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
@@ -51,7 +51,7 @@ func TestWriteResponse(t *testing.T) {
 			},
 			testFn: func(t *testing.T, args args) {
 				contentType := ImageGIF
-				charsetType := defaultResponseOptions.CharsetType
+				charsetType := defaultResponseOptions().CharsetType
 
 				assert.Equal(t, args.w.Code, http.StatusNoContent)
 				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
@@ -89,7 +89,7 @@ func TestWriteResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			WriteResponse(tt.args.w, tt.args.data, tt.args.code, tt.args.opts...)
+			assert.NoError(t, WriteResponse(tt.args.w, tt.args.data, tt.args.code, tt.args.opts...))
 			tt.testFn(t, tt.args)
 		})
 	}
@@ -119,7 +119,7 @@ func TestWriteErrorResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			WriteErrorResponse(tt.args.w, tt.args.code, tt.args.opts...)
+			assert.NoError(t, WriteErrorResponse(tt.args.w, tt.args.code, tt.args.opts...))
 			tt.testFn(t, tt.args)
 		})
 	}
