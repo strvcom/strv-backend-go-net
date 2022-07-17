@@ -3,6 +3,8 @@ package http
 import (
 	"net/http"
 
+	"go.strv.io/net/logger"
+
 	"go.strv.io/time"
 )
 
@@ -19,6 +21,9 @@ type ServerConfig struct {
 
 	// Limits are server limits, like timeouts and header restrictions.
 	Limits *Limits `json:"limits,omitempty"`
+
+	// Logger is server logger.
+	Logger logger.ServerLogger
 }
 
 // Limits define timeouts and header restrictions.
