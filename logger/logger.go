@@ -14,6 +14,10 @@ type ServerLogger interface {
 	// at the log site, as well as any fields accumulated on the logger.
 	Debug(msg string)
 
+	// Warn logs a message at WarnLevel. The message includes any fields passed
+	// at the log site, as well as any fields accumulated on the logger.
+	Warn(msg string)
+
 	// Error logs a message at ErrorLevel. The message includes any fields passed
 	// at the log site, as well as any fields accumulated on the logger.
 	Error(msg string, err error)
@@ -22,10 +26,10 @@ type ServerLogger interface {
 // Field contains logging context passed to logging functions.
 // It is inspired by zapcore.Field. See https://godoc.org/go.uber.org/zap#Field for details.
 type Field struct {
-	Key       string
-	Interface interface{}
+	Key   string
+	Value any
 }
 
-func Any(key string, value interface{}) Field {
-	return Field{Key: key, Interface: value}
+func Any(key string, value any) Field {
+	return Field{Key: key, Value: value}
 }
