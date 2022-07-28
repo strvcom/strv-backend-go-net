@@ -17,6 +17,10 @@ func (*NopLogger) Debug(string) {
 	return
 }
 
+func (*NopLogger) Warn(string) {
+	return
+}
+
 func (*NopLogger) Error(string, error) {
 	return
 }
