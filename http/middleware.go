@@ -4,10 +4,9 @@ import (
 	"net/http"
 	"time"
 
+	"go.strv.io/net"
 	"go.strv.io/net/internal"
 	"go.strv.io/net/logger"
-
-	"github.com/google/uuid"
 )
 
 func RecoverMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Handler {
@@ -26,10 +25,11 @@ func RecoverMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Ha
 func LoggingMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			requestID := uuid.New().String()
+			requestID := net.NewRequestID()
 			requestStart := time.Now()
 
 			rw := internal.NewResponseWriter(w, l)
+			r = r.WithContext(net.WithRequestID(r.Context(), requestID))
 			next.ServeHTTP(rw, r)
 
 			ld := LogData{
