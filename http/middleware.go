@@ -9,6 +9,33 @@ import (
 	"go.strv.io/net/logger"
 )
 
+const (
+	requestIDLogFieldName = "request_id"
+)
+
+type RequestIDFunc func(h http.Header) string
+
+func RequestIDMiddleware(f RequestIDFunc) func(handler http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if requestID := net.RequestIDFromCtx(r.Context()); requestID != "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			var requestID string
+			if rID := f(r.Header); rID != "" {
+				requestID = rID
+			} else {
+				requestID = net.NewRequestID()
+			}
+
+			ctx := net.WithRequestID(r.Context(), requestID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 func RecoverMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +49,11 @@ func RecoverMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Ha
 					rw.SetPanicObject(re)
 					rw.WriteHeader(http.StatusInternalServerError)
 
-					l.With(logger.Any("err", re)).Error("panic recover", nil)
+					net.RequestIDFromCtx(r.Context())
+					l.With(
+						logger.Any("err", re),
+						logger.Any(requestIDLogFieldName, net.RequestIDFromCtx(r.Context())),
+					).Error("panic recover", nil)
 				}
 			}()
 			next.ServeHTTP(w, r)
@@ -38,11 +69,10 @@ func LoggingMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Ha
 				rw = internal.NewResponseWriter(w, l)
 			}
 
-			requestID := net.NewRequestID()
 			requestStart := time.Now()
-			r = r.WithContext(net.WithRequestID(r.Context(), requestID))
 			next.ServeHTTP(rw, r)
 			statusCode := rw.StatusCode()
+			requestID := net.RequestIDFromCtx(r.Context())
 
 			ld := LogData{
 				Path:               r.URL.EscapedPath(),

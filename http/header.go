@@ -9,6 +9,7 @@ var (
 		ContentType     string
 		WWWAuthenticate string
 		XRequestID      string
+		AmazonTraceID   string
 	}{
 		AcceptLanguage:  "Accept-Language",
 		Authorization:   "Authorization",
@@ -16,5 +17,6 @@ var (
 		ContentType:     "Content-Type",
 		WWWAuthenticate: "Www-Authenticate",
 		XRequestID:      "X-Request-Id",
+		AmazonTraceID:   "X-Amzn-Trace-Id",
 	}
 )
