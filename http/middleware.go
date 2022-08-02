@@ -9,7 +9,41 @@ import (
 	"go.strv.io/net/logger"
 )
 
-func RecoverMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Handler {
+const (
+	requestIDLogFieldName = "request_id"
+)
+
+// RequestIDFunc is used for obtaining a request ID from the HTTP header.
+type RequestIDFunc func(h http.Header) string
+
+// RequestIDMiddleware saves request ID into the request context.
+// If context already contains request ID, next handler is called.
+// If the user provided function returns empty request ID, a new one is generated.
+func RequestIDMiddleware(f RequestIDFunc) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if requestID := net.RequestIDFromCtx(r.Context()); requestID != "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			var requestID string
+			if rID := f(r.Header); rID != "" {
+				requestID = rID
+			} else {
+				requestID = net.NewRequestID()
+			}
+
+			ctx := net.WithRequestID(r.Context(), requestID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+// RecoverMiddleware calls next handler and recovers from a panic.
+// If a panic occurs, log this event, set http.StatusInternalServerError as a status code
+// and save a panic object into the response writer.
+func RecoverMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -22,7 +56,10 @@ func RecoverMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Ha
 					rw.SetPanicObject(re)
 					rw.WriteHeader(http.StatusInternalServerError)
 
-					l.With(logger.Any("err", re)).Error("panic recover", nil)
+					l.With(
+						logger.Any("err", re),
+						logger.Any(requestIDLogFieldName, net.RequestIDFromCtx(r.Context())),
+					).Error("panic recover", nil)
 				}
 			}()
 			next.ServeHTTP(w, r)
@@ -30,7 +67,15 @@ func RecoverMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Ha
 	}
 }
 
-func LoggingMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Handler {
+// LoggingMiddleware logs:
+//   - URL path
+//   - HTTP method
+//   - Request ID
+//   - Duration of a request
+//   - HTTP status code
+//   - Panic object if exists
+// If the status code >= http.StatusInternalServerError, logs with error level, info otherwise.
+func LoggingMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rw, ok := w.(*internal.ResponseWriter)
@@ -38,11 +83,10 @@ func LoggingMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Ha
 				rw = internal.NewResponseWriter(w, l)
 			}
 
-			requestID := net.NewRequestID()
 			requestStart := time.Now()
-			r = r.WithContext(net.WithRequestID(r.Context(), requestID))
 			next.ServeHTTP(rw, r)
 			statusCode := rw.StatusCode()
+			requestID := net.RequestIDFromCtx(r.Context())
 
 			ld := LogData{
 				Path:               r.URL.EscapedPath(),
@@ -62,11 +106,11 @@ func LoggingMiddleware(l logger.ServerLogger) func(handler http.Handler) http.Ha
 	}
 }
 
-// LogData contains processed request data for purposes of logging.
+// LogData contains processed request data for logging purposes.
 // Path is path from URL of the request.
-// Method is http request method.
+// Method is HTTP request method.
 // Duration is how long it took to process whole request.
-// ResponseStatusCode is http status code which was returned.
+// ResponseStatusCode is HTTP status code which was returned.
 // RequestID is unique identifier of request.
 // Panic is panic object containing error message.
 type LogData struct {
@@ -78,7 +122,7 @@ type LogData struct {
 	Panic              any
 }
 
-// WithData returns logger with filled fields based on provided logging settings.
+// WithData returns logger with filled fields.
 func WithData(l logger.ServerLogger, ld LogData) logger.ServerLogger {
 	l = l.With(
 		logger.Any("method", ld.Method),
