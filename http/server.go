@@ -62,9 +62,9 @@ type Server struct {
 	doBeforeShutdown []ServerHookFunc
 }
 
-// Start calls ListenAndServe but returns error only if err != http.ErrServerClosed.
+// Run calls ListenAndServe but returns error only if err != http.ErrServerClosed.
 // Passed context is used as base context of all http requests and to shutdown server gracefully.
-func (s *Server) Start(ctx context.Context) error {
+func (s *Server) Run(ctx context.Context) error {
 	if s.logger == nil {
 		s.logger = &internal.NopLogger{}
 	}
