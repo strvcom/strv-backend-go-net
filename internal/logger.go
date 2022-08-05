@@ -9,18 +9,10 @@ func (l *NopLogger) With(...logger.Field) logger.ServerLogger {
 	return l
 }
 
-func (*NopLogger) Info(string) {
-	return
-}
+func (*NopLogger) Info(string) {}
 
-func (*NopLogger) Debug(string) {
-	return
-}
+func (*NopLogger) Debug(string) {}
 
-func (*NopLogger) Warn(string) {
-	return
-}
+func (*NopLogger) Warn(string) {}
 
-func (*NopLogger) Error(string, error) {
-	return
-}
+func (*NopLogger) Error(string, error) {}

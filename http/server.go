@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"errors"
 	"net"
 	"net/http"
 	"os"
@@ -10,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"go.strv.io/net/errors"
+	neterrors "go.strv.io/net/errors"
 	"go.strv.io/net/internal"
 	"go.strv.io/net/logger"
 )
@@ -26,6 +27,7 @@ func NewServer(config *ServerConfig) *Server {
 
 	s := &Server{
 		logger: config.Logger,
+		//nolint:gosec // ReadHeaderTimeout is set below
 		server: &http.Server{
 			Addr:           config.Addr,
 			Handler:        config.Handler,
@@ -86,7 +88,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	select {
 	case err := <-errCh:
-		if err != http.ErrServerClosed {
+		if errors.Is(err, http.ErrServerClosed) {
 			s.logger.Error("server stopped: error received", err)
 		} else {
 			s.logger.Debug("server stopped: server closed")
@@ -96,7 +98,7 @@ func (s *Server) Start(ctx context.Context) error {
 	case sig := <-s.signalsListener:
 		s.logger.With(
 			logger.Any("signal", sig),
-		).Error("server stopped: signal received", errors.ErrServerInterrupted)
+		).Error("server stopped: signal received", neterrors.ErrServerInterrupted)
 	}
 
 	s.logger.With(
@@ -113,7 +115,7 @@ func (s *Server) Start(ctx context.Context) error {
 	case <-s.waitForShutdown:
 		return nil
 	case <-time.After(*defaultTo(s.shutdownTimeout, &defaultShutdownTimeout)):
-		return errors.ErrShutdownTimeout
+		return neterrors.ErrShutdownTimeout
 	}
 }
 

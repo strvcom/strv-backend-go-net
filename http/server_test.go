@@ -64,6 +64,7 @@ func TestNewServer(t *testing.T) {
 				config: &ServerConfig{},
 			},
 			want: func() *Server {
+				//nolint:gosec
 				s := &Server{
 					server:           &http.Server{},
 					shutdownTimeout:  &defaultShutdownTimeout,
@@ -107,9 +108,11 @@ func TestServer_Start(t *testing.T) {
 			name: "success:start-server-and-cancel-context",
 			args: args{ctx: newCancellableContext(context.TODO())},
 			testFn: func(t *testing.T, args args, _ *fields) {
+				t.Helper()
 				args.ctx.Cancel()
 			},
 			fields: &fields{
+				//nolint:gosec
 				server:           &http.Server{},
 				signalsListener:  make(chan os.Signal, 1),
 				waitForShutdown:  make(chan struct{}, 1),
@@ -121,9 +124,11 @@ func TestServer_Start(t *testing.T) {
 			name: "success:start-server-and-kill",
 			args: args{ctx: newCancellableContext(context.TODO())},
 			testFn: func(t *testing.T, _ args, fields *fields) {
+				t.Helper()
 				fields.signalsListener <- syscall.SIGKILL
 			},
 			fields: &fields{
+				//nolint:gosec
 				server:           &http.Server{},
 				signalsListener:  make(chan os.Signal, 1),
 				waitForShutdown:  make(chan struct{}, 1),
@@ -135,9 +140,11 @@ func TestServer_Start(t *testing.T) {
 			name: "success:start-server-and-wait-for-shutdown",
 			args: args{ctx: newCancellableContext(context.TODO())},
 			testFn: func(t *testing.T, _ args, fields *fields) {
+				t.Helper()
 				fields.signalsListener <- syscall.SIGKILL
 			},
 			fields: &fields{
+				//nolint:gosec
 				server:          &http.Server{},
 				signalsListener: make(chan os.Signal, 1),
 				waitForShutdown: make(chan struct{}, 1),

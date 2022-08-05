@@ -74,6 +74,7 @@ func RecoverMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 //   - Duration of a request
 //   - HTTP status code
 //   - Panic object if exists
+//
 // If the status code >= http.StatusInternalServerError, logs with error level, info otherwise.
 func LoggingMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

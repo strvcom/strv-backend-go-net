@@ -1,0 +1,58 @@
+linters:
+  # Disable all linters.
+  # Default: false
+  disable-all: true
+  # Enable specific linter
+  # https://golangci-lint.run/usage/linters/#enabled-by-default-linters
+  enable:
+    # default linters
+    - deadcode
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unused
+    - varcheck
+    # extra linters
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - cyclop
+    - durationcheck
+    - errname
+    - errorlint
+    - exhaustive
+    - gocognit
+    - goconst
+    - gocritic
+    - gofmt
+    - gomnd
+    - gosec
+    - misspell
+    - nilerr
+    - nilnil
+    - revive
+    - prealloc
+    - stylecheck
+    - tenv
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+
+linters-settings:
+  gomnd:
+    ignored-functions:
+      - 'strconv.Parse*'
+      - 'strconv.Format*'
+      - 'strings.SplitN'
+  goconst:
+    ignore-tests: true
+  gocognit:
+    min-complexity: 20
