@@ -29,6 +29,7 @@ func TestWriteResponse(t *testing.T) {
 				code: http.StatusNoContent,
 			},
 			testFn: func(t *testing.T, args args) {
+				t.Helper()
 				contentType := defaultResponseOptions().ContentType
 				charsetType := defaultResponseOptions().CharsetType
 
@@ -50,6 +51,7 @@ func TestWriteResponse(t *testing.T) {
 				opts: []ResponseOption{WithContentType(ImageGIF)},
 			},
 			testFn: func(t *testing.T, args args) {
+				t.Helper()
 				contentType := ImageGIF
 				charsetType := defaultResponseOptions().CharsetType
 
@@ -74,6 +76,7 @@ func TestWriteResponse(t *testing.T) {
 				},
 			},
 			testFn: func(t *testing.T, args args) {
+				t.Helper()
 				contentType := ImageGIF
 				charsetType := CharsetType("custom")
 
@@ -113,6 +116,7 @@ func TestWriteErrorResponse(t *testing.T) {
 				code: http.StatusInternalServerError,
 			},
 			testFn: func(t *testing.T, args args) {
+				t.Helper()
 				assert.Equal(t, args.w.Code, http.StatusInternalServerError)
 			},
 		},
