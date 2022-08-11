@@ -15,7 +15,7 @@ var (
 		Authorization:   "Authorization",
 		ContentLanguage: "Content-Language",
 		ContentType:     "Content-Type",
-		WWWAuthenticate: "Www-Authenticate",
+		WWWAuthenticate: "WWW-Authenticate",
 		XRequestID:      "X-Request-Id",
 		AmazonTraceID:   "X-Amzn-Trace-Id",
 	}
