@@ -182,11 +182,11 @@ func TestServer_Start(t *testing.T) {
 			go func() {
 				deadline, ok := t.Deadline()
 				if !ok {
-					errCh <- s.Start(tt.args.ctx)
+					errCh <- s.Run(tt.args.ctx)
 				} else {
 					ctxWithDeadline, cancel := context.WithDeadline(tt.args.ctx, deadline)
 					defer cancel()
-					errCh <- s.Start(ctxWithDeadline)
+					errCh <- s.Run(ctxWithDeadline)
 				}
 			}()
 			tt.testFn(t, tt.args, tt.fields)
