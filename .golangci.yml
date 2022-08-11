@@ -56,3 +56,38 @@ linters-settings:
     ignore-tests: true
   gocognit:
     min-complexity: 20
+  revive:
+    rules:
+      - name: atomic
+        severity: warning
+        disabled: false
+      - name: context-keys-type
+        severity: warning
+        disabled: false
+      - name: defer
+        severity: warning
+        disabled: false
+      - name: early-return
+        severity: warning
+        disabled: false
+      - name: indent-error-flow
+        severity: warning
+        disabled: false
+      - name: range-val-in-closure
+        severity: warning
+        disabled: false
+      - name: range-val-address
+        severity: warning
+        disabled: false
+      - name: string-of-int
+        severity: warning
+        disabled: false
+      - name: superfluous-else
+        severity: warning
+        disabled: false
+      - name: time-equal
+        severity: warning
+        disabled: false
+      - name: unhandled-error
+        severity: warning
+        disabled: false
