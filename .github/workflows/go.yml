@@ -1,0 +1,28 @@
+name: Set Go version
+
+env:
+  GO_VERSION: 1.19
+
+on:
+  workflow_call:
+    outputs:
+      GO_VERSION:
+        description: Used Go version
+        value: ${{ jobs.set-go-version.outputs.GO_VERSION }}
+
+jobs:
+  set-go-version:
+    name: Export Go version
+    runs-on: ubuntu-latest
+    permissions:
+      contents: none
+    outputs:
+      GO_VERSION: ${{ steps.go-version.outputs.GO_VERSION }}
+    steps:
+      - name: Go version
+        run: |
+          echo "Go version is set to ${{ env.GO_VERSION }}"
+      - name: Export Go version
+        id: go-version
+        run: |
+          echo "::set-output name=GO_VERSION::${{ env.GO_VERSION }}"

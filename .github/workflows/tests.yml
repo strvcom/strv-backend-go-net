@@ -1,0 +1,35 @@
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'master'
+  release:
+    types: [ published ]
+
+jobs:
+  set-go-version:
+    name: Set Go version
+    uses: ./.github/workflows/go.yml
+
+  go-test:
+    name: Go test
+    needs: [ set-go-version ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ needs.set-go-version.outputs.GO_VERSION }}
+      - name: Run tests with coverage
+        run: |
+          go test -race -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
