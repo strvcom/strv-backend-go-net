@@ -12,17 +12,17 @@ on:
 
 jobs:
   set-go-version:
-    name: Export Go version
+    name: Set Go version
     runs-on: ubuntu-latest
     permissions:
       contents: none
     outputs:
       GO_VERSION: ${{ steps.go-version.outputs.GO_VERSION }}
     steps:
-      - name: Go version
+      - name: Get Go version
         run: |
           echo "Go version is set to ${{ env.GO_VERSION }}"
-      - name: Export Go version
+      - name: Set Go version
         id: go-version
         run: |
           echo "::set-output name=GO_VERSION::${{ env.GO_VERSION }}"

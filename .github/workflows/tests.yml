@@ -14,7 +14,7 @@ jobs:
     uses: ./.github/workflows/go.yml
 
   go-test:
-    name: Go test
+    name: Run Go test
     needs: [ set-go-version ]
     runs-on: ubuntu-latest
     permissions:
@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ needs.set-go-version.outputs.GO_VERSION }}
-      - name: Run tests with coverage
+      - name: Run Go tests with coverage
         run: |
           go test -race -coverprofile=coverage.out -covermode=atomic ./...
       - name: Upload coverage to Codecov
