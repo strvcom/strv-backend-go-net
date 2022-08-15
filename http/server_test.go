@@ -117,6 +117,7 @@ func TestServer_Start(t *testing.T) {
 				signalsListener:  make(chan os.Signal, 1),
 				waitForShutdown:  make(chan struct{}, 1),
 				doBeforeShutdown: []ServerHookFunc{},
+				shutdownTimeout:  &defaultShutdownTimeout,
 			},
 			wantErr: nil,
 		},
@@ -133,6 +134,7 @@ func TestServer_Start(t *testing.T) {
 				signalsListener:  make(chan os.Signal, 1),
 				waitForShutdown:  make(chan struct{}, 1),
 				doBeforeShutdown: []ServerHookFunc{},
+				shutdownTimeout:  &defaultShutdownTimeout,
 			},
 			wantErr: nil,
 		},
@@ -148,6 +150,7 @@ func TestServer_Start(t *testing.T) {
 				server:          &http.Server{},
 				signalsListener: make(chan os.Signal, 1),
 				waitForShutdown: make(chan struct{}, 1),
+				shutdownTimeout: &defaultShutdownTimeout,
 				doBeforeShutdown: []ServerHookFunc{
 					func(_ context.Context) {
 						<-time.After(time.Millisecond * 200)
