@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.8.0
-	go.strv.io/time v0.0.0-20220715055838-d5b749b3b48c
+	go.strv.io/time v0.1.0
 )
 
 require (
