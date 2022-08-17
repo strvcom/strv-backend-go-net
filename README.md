@@ -1,5 +1,9 @@
 # STRV net
 
+![Latest release][release]
+[![codecov][codecov-img]][codecov]
+![GitHub][license]
+
 Go package facilitating writing API applications in a fast and easy manner.
 
 ## Available packages
@@ -78,3 +82,8 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 	_ = httpx.WriteResponse(w, userResp, http.StatusOK)
 }
 ```
+
+[release]: https://img.shields.io/github/v/release/strvcom/strv-backend-go-net
+[codecov]: https://codecov.io/gh/strvcom/strv-backend-go-net
+[codecov-img]: https://codecov.io/gh/strvcom/strv-backend-go-net/branch/master/graph/badge.svg?token=QI6YW1E4TC
+[license]: https://img.shields.io/github/license/strvcom/strv-backend-go-net
