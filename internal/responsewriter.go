@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"bufio"
+	"errors"
+	"net"
 	"net/http"
 	"sync/atomic"
 
@@ -54,4 +57,12 @@ func (r *ResponseWriter) TryWriteHeader(statusCode int) bool {
 		return true
 	}
 	return false
+}
+
+func (r *ResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := r.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("hijack not supported")
+	}
+	return h.Hijack()
 }
