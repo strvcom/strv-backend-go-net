@@ -3,6 +3,8 @@ package http
 import (
 	"fmt"
 	"net/http"
+
+	"go.strv.io/net/internal"
 )
 
 type ResponseOptions struct {
@@ -77,17 +79,28 @@ func WriteErrorResponse(
 		return fmt.Errorf("response encoding: %w", err)
 	}
 
+	if rw, ok := w.(*internal.ResponseWriter); ok {
+		rw.SetErrorObject(o.Err)
+	}
+
 	return nil
 }
 
 type ErrorResponseOptions struct {
 	ResponseOptions `json:"-"`
 
+	Err     error  `json:"-"`
 	ErrCode string `json:"error_code"`
 	ErrData any    `json:"error_data,omitempty"`
 }
 
 type ErrorResponseOption func(*ErrorResponseOptions)
+
+func WithError(err error) ErrorResponseOption {
+	return func(o *ErrorResponseOptions) {
+		o.Err = err
+	}
+}
 
 func WithErrorCode(code string) ErrorResponseOption {
 	return func(o *ErrorResponseOptions) {

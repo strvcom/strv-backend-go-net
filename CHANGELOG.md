@@ -5,6 +5,12 @@ How to release a new version:
 
 ## [Unreleased]
 
+### Added
+- HTTP response writer contains error field.
+
+### Changed
+- `LoggingMiddleware` logs `err` field with message if error is present.
+
 ## [0.2.0] - 2022-08-22
 ### Added
 - HTTP response writer implements hijacking to support web sockets.

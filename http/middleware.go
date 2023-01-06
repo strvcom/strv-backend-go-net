@@ -73,6 +73,7 @@ func RecoverMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 //   - Request ID
 //   - Duration of a request
 //   - HTTP status code
+//   - Error object if exists
 //   - Panic object if exists
 //
 // If the status code >= http.StatusInternalServerError, logs with error level, info otherwise.
@@ -95,6 +96,7 @@ func LoggingMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 				RequestID:          requestID,
 				Duration:           time.Since(requestStart),
 				ResponseStatusCode: statusCode,
+				Err:                rw.ErrorObject(),
 				Panic:              rw.PanicObject(),
 			}
 
@@ -113,6 +115,7 @@ func LoggingMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 // Duration is how long it took to process whole request.
 // ResponseStatusCode is HTTP status code which was returned.
 // RequestID is unique identifier of request.
+// Err is error object containing error message.
 // Panic is panic object containing error message.
 type LogData struct {
 	Path               string
@@ -120,6 +123,7 @@ type LogData struct {
 	Duration           time.Duration
 	ResponseStatusCode int
 	RequestID          string
+	Err                error
 	Panic              any
 }
 
@@ -132,6 +136,9 @@ func WithData(l logger.ServerLogger, ld LogData) logger.ServerLogger {
 		logger.Any("request_id", ld.RequestID),
 		logger.Any("duration_ms", ld.Duration.Milliseconds()),
 	)
+	if ld.Err != nil {
+		l = l.With(logger.Any("err", ld.Err.Error()))
+	}
 	if ld.Panic != nil {
 		l = l.With(logger.Any("panic", ld.Panic))
 	}
