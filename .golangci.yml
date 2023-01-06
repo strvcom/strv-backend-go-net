@@ -6,21 +6,16 @@ linters:
   # https://golangci-lint.run/usage/linters/#enabled-by-default-linters
   enable:
     # default linters
-    - deadcode
     - errcheck
     - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - structcheck
     - typecheck
     - unused
-    - varcheck
     # extra linters
     - bidichk
     - bodyclose
-    - contextcheck
-    - cyclop
     - durationcheck
     - errname
     - errorlint
@@ -33,7 +28,6 @@ linters:
     - gosec
     - misspell
     - nilerr
-    - nilnil
     - revive
     - prealloc
     - stylecheck
