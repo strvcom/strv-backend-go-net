@@ -15,6 +15,7 @@ type ResponseWriter struct {
 	statusCode        int
 	calledWriteHeader int32
 	logger            logger.ServerLogger
+	err               error
 	panic             any
 }
 
@@ -24,6 +25,7 @@ func NewResponseWriter(w http.ResponseWriter, l logger.ServerLogger) *ResponseWr
 		statusCode:        http.StatusOK,
 		calledWriteHeader: 0,
 		logger:            l,
+		err:               nil,
 		panic:             nil,
 	}
 }
@@ -40,6 +42,14 @@ func (r *ResponseWriter) WriteHeader(statusCode int) {
 		logger.Any("current_status_code", r.statusCode),
 		logger.Any("ignored_status_code", statusCode),
 	).Warn("WriteHeader multiple call")
+}
+
+func (r *ResponseWriter) ErrorObject() error {
+	return r.err
+}
+
+func (r *ResponseWriter) SetErrorObject(err error) {
+	r.err = err
 }
 
 func (r *ResponseWriter) PanicObject() any {

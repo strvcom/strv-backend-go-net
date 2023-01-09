@@ -29,7 +29,7 @@ Wrapper around the Go native http server. `http` defines the `Server` that can b
 - Middlewares:
 	- `RequestIDMiddleware` sets request id in to the context.
 	- `RecoverMiddleware` recovers from panic and sets panic object into the response writer for logging.
-	- `LoggingMiddleware` logs information about the request (method, path, status code, request id and duration of the request).
+	- `LoggingMiddleware` logs information about the request (method, path, status code, request id, duration of the request, error message and panic message).
 - Method `WriteResponse` for writing a http response and `WriteErrorResponse` for writing an error http response. Writing of responses can be configured by `ResponseOption`.
 
 ## Examples
