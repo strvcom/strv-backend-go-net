@@ -39,13 +39,14 @@ func NewServer(config *ServerConfig) *Server {
 		doBeforeShutdown: config.Hooks.BeforeShutdown,
 	}
 	if to := config.Limits.Timeouts; to != nil {
-		s.server.ReadTimeout = to.ReadTimeout.Duration
-		s.server.ReadHeaderTimeout = to.ReadHeaderTimeout.Duration
-		s.server.WriteTimeout = to.WriteTimeout.Duration
-		s.server.IdleTimeout = to.IdleTimeout.Duration
+		s.server.ReadTimeout = to.ReadTimeout.Duration()
+		s.server.ReadHeaderTimeout = to.ReadHeaderTimeout.Duration()
+		s.server.WriteTimeout = to.WriteTimeout.Duration()
+		s.server.IdleTimeout = to.IdleTimeout.Duration()
 
 		if to.ShutdownTimeout != nil {
-			s.shutdownTimeout = &to.ShutdownTimeout.Duration
+			d := to.ShutdownTimeout.Duration()
+			s.shutdownTimeout = &d
 		}
 	}
 
