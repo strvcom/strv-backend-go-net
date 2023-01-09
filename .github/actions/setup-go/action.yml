@@ -1,0 +1,24 @@
+name: Setup Go
+description: |
+  Setup Go
+
+inputs:
+  go-version:
+    description: Used Go version
+    default: '1.19'
+
+runs:
+  using: "composite"
+  steps:
+    - id: go-version
+      run: |
+        echo "Go version is set to ${{ inputs.go-version }}"
+        echo "GO_VERSION=${{ inputs.go-version }}" >> $GITHUB_ENV
+      shell: bash
+    - id: go-setup
+      uses: actions/setup-go@v3
+      with:
+        go-version: ${{ env.GO_VERSION }}
+    - run: |
+        go mod download
+      shell: bash
