@@ -33,7 +33,7 @@ type Limits struct {
 
 	// MaxHeaderBytes is part of http.Server.
 	// See http.Server for more details.
-	MaxHeaderBytes int `json:"maxHeaderBytes"`
+	MaxHeaderBytes int `json:"max_header_bytes"`
 }
 
 // Timeouts represents configuration for HTTP server timeouts.
