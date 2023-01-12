@@ -90,8 +90,8 @@ type ErrorResponseOptions struct {
 	ResponseOptions `json:"-"`
 
 	Err     error  `json:"-"`
-	ErrCode string `json:"error_code"`
-	ErrData any    `json:"error_data,omitempty"`
+	ErrCode string `json:"errorCode"`
+	ErrData any    `json:"errorData,omitempty"`
 }
 
 type ErrorResponseOption func(*ErrorResponseOptions)
