@@ -5,6 +5,9 @@ How to release a new version:
 
 ## [Unreleased]
 
+### Fixed
+- JSON tag for `MaxHeaderBytes` field in `Limits` configuration.
+
 ## [0.3.0] - 2023-01-09
 ### Added
 - HTTP response writer contains error field.
