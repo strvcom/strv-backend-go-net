@@ -33,7 +33,7 @@ How to release a new version:
 - Added Changelog.
 
 [Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.4.0...HEAD
-[0.4.0]: https://github.com/strvcom/strv-backend-go-net/releases/tag/v0.4.0
-[0.3.0]: https://github.com/strvcom/strv-backend-go-net/releases/tag/v0.3.0
-[0.2.0]: https://github.com/strvcom/strv-backend-go-net/releases/tag/v0.2.0
+[0.4.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/strvcom/strv-backend-go-net/releases/tag/v0.1.0
