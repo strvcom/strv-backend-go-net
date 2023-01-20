@@ -5,6 +5,14 @@ How to release a new version:
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-01-20
+### Added
+- `ErrorResponseOptions` contains public error message.
+- `ErrorResponseOptions` contains request ID.
+- Error response options:
+  - `WithErrorMessage`
+  - `WithRequestID`
+
 ## [0.4.0] - 2022-01-12
 ### Changed
 - JSON tags in `ErrorResponseOptions`.
@@ -32,7 +40,8 @@ How to release a new version:
 ### Added
 - Added Changelog.
 
-[Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.1.0...v0.2.0

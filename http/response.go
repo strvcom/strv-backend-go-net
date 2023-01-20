@@ -89,12 +89,21 @@ func WriteErrorResponse(
 type ErrorResponseOptions struct {
 	ResponseOptions `json:"-"`
 
-	Err     error  `json:"-"`
-	ErrCode string `json:"errorCode"`
-	ErrData any    `json:"errorData,omitempty"`
+	RequestID string `json:"requestId,omitempty"`
+
+	Err        error  `json:"-"`
+	ErrCode    string `json:"errorCode"`
+	ErrMessage string `json:"errorMessage,omitempty"`
+	ErrData    any    `json:"errorData,omitempty"`
 }
 
 type ErrorResponseOption func(*ErrorResponseOptions)
+
+func WithRequestID(id string) ErrorResponseOption {
+	return func(o *ErrorResponseOptions) {
+		o.RequestID = id
+	}
+}
 
 func WithError(err error) ErrorResponseOption {
 	return func(o *ErrorResponseOptions) {
@@ -105,6 +114,12 @@ func WithError(err error) ErrorResponseOption {
 func WithErrorCode(code string) ErrorResponseOption {
 	return func(o *ErrorResponseOptions) {
 		o.ErrCode = code
+	}
+}
+
+func WithErrorMessage(msg string) ErrorResponseOption {
+	return func(o *ErrorResponseOptions) {
+		o.ErrMessage = msg
 	}
 }
 
