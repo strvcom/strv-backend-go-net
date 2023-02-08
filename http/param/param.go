@@ -47,26 +47,42 @@ func (p ParamParser) Parse(r *http.Request, dest any) error {
 
 	for i := 0; i < v.NumField(); i++ {
 		tag := v.Type().Field(i).Tag
-		if paramName, ok := p.QueryParamTagResolver(tag); ok {
-			query := r.URL.Query()
-			if query.Has(paramName) {
-				paramValue := query.Get(paramName)
-				err := unmarshalValue(paramValue, v.Field(i).Addr().Interface())
-				if err != nil {
-					return fmt.Errorf("unmarshaling query parameter %s: %w", paramName, err)
-				}
+		err := p.parseQueryParam(r, tag, v, i)
+		if err != nil {
+			return err
+		}
+		err2 := p.parsePathParam(r, tag, v, i)
+		if err2 != nil {
+			return err2
+		}
+	}
+	return nil
+}
+
+func (p ParamParser) parsePathParam(r *http.Request, tag reflect.StructTag, v reflect.Value, i int) error {
+	if paramName, ok := p.PathParamTagResolver(tag); ok {
+		if p.PathParamFunc == nil {
+			return fmt.Errorf("struct's field was tagged for parsing the path parameter (%s) but PathParamFunc to get value of path parameter is not defined", paramName)
+		}
+		paramValue := p.PathParamFunc(r, paramName)
+		if paramValue != "" {
+			err := unmarshalValue(paramValue, v.Field(i).Addr().Interface())
+			if err != nil {
+				return fmt.Errorf("unmarshaling path parameter %s: %w", paramName, err)
 			}
 		}
-		if paramName, ok := p.PathParamTagResolver(tag); ok {
-			if p.PathParamFunc == nil {
-				return fmt.Errorf("struct's field was tagged for parsing the path parameter (%s) but PathParamFunc to get value of path parameter is not defined", paramName)
-			}
-			paramValue := p.PathParamFunc(r, paramName)
-			if paramValue != "" {
-				err := unmarshalValue(paramValue, v.Field(i).Addr().Interface())
-				if err != nil {
-					return fmt.Errorf("unmarshaling path parameter %s: %w", paramName, err)
-				}
+	}
+	return nil
+}
+
+func (p ParamParser) parseQueryParam(r *http.Request, tag reflect.StructTag, v reflect.Value, i int) error {
+	if paramName, ok := p.QueryParamTagResolver(tag); ok {
+		query := r.URL.Query()
+		if query.Has(paramName) {
+			paramValue := query.Get(paramName)
+			err := unmarshalValue(paramValue, v.Field(i).Addr().Interface())
+			if err != nil {
+				return fmt.Errorf("unmarshaling query parameter %s: %w", paramName, err)
 			}
 		}
 	}

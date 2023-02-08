@@ -10,12 +10,12 @@ import (
 )
 
 var (
-	// InputGetError is passed to ErrorHandlerFunc when WrapHandler (or derived) fails in the first step (parsing input)
-	InputGetError = errors.New("parsing input")
-	// InnerHandlerError is passed to ErrorHandlerFunc when WrapHandler (or derived) fails in the second step (inner handler)
-	InnerHandlerError = errors.New("inner handler")
-	// ResponseMarshalError is passed to ErrorHandlerFunc when WrapHandler (or derived) fails in the third step (marshaling response object)
-	ResponseMarshalError = errors.New("marshaling response")
+	// ErrInputGet is passed to ErrorHandlerFunc when WrapHandler (or derived) fails in the first step (parsing input)
+	ErrInputGet = errors.New("parsing input")
+	// ErrInnerHandler is passed to ErrorHandlerFunc when WrapHandler (or derived) fails in the second step (inner handler)
+	ErrInnerHandler = errors.New("inner handler")
+	// ErrResponseMarshal is passed to ErrorHandlerFunc when WrapHandler (or derived) fails in the third step (marshaling response object)
+	ErrResponseMarshal = errors.New("marshaling response")
 )
 
 type InputGetterFunc func(r *http.Request, dest any) error
@@ -57,18 +57,18 @@ func (w Wrapper) WithErrorHandler(f ErrorHandlerFunc) Wrapper {
 }
 
 func inputErrorWithType(target any, innerError error) error {
-	return fmt.Errorf("%w into type %T: %w", InputGetError, target, innerError)
+	return fmt.Errorf("%w into type %T: %w", ErrInputGet, target, innerError)
 }
 
 func responseErrorWithType(src any, innerError error) error {
 	if src == nil {
-		return fmt.Errorf("%w without response object: %w", ResponseMarshalError, innerError)
+		return fmt.Errorf("%w without response object: %w", ErrResponseMarshal, innerError)
 	}
-	return fmt.Errorf("%w from type %T: %w", ResponseMarshalError, src, innerError)
+	return fmt.Errorf("%w from type %T: %w", ErrResponseMarshal, src, innerError)
 }
 
 func wrapInnerHandlerError(innerError error) error {
-	return fmt.Errorf("%w: %w", InnerHandlerError, innerError)
+	return fmt.Errorf("%w: %w", ErrInnerHandler, innerError)
 }
 
 // WrapHandler enables a handler with signature of second parameter to be used as a http.HandlerFunc.
@@ -198,7 +198,7 @@ func AlwaysInternalErrorHandle(w http.ResponseWriter, _ *http.Request, _ error) 
 // Otherwise, writes 500 Internal Server Error http status code on error.
 // In either case, error message is not returned in response and is lost
 func InputGetErrorHandle(w http.ResponseWriter, r *http.Request, err error) {
-	if errors.Is(err, InputGetError) {
+	if errors.Is(err, ErrInputGet) {
 		_ = httpx.WriteErrorResponse(w, http.StatusBadRequest)
 		return
 	}
