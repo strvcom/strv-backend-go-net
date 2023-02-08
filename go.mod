@@ -1,8 +1,9 @@
 module go.strv.io/net
 
-go 1.19
+go 1.20
 
 require (
+	github.com/go-chi/chi/v5 v5.0.8
 	github.com/google/uuid v1.3.0
 	github.com/stretchr/testify v1.8.0
 	go.strv.io/time v0.2.0

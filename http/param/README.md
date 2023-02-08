@@ -1,0 +1,1 @@
+Minimal package for parsing path and query parameters from http request into struct, similar to parsing body as json to struct. 

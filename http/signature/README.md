@@ -1,0 +1,2 @@
+A very cool package to enable writing http handler functions as a human being - with appropriate function signatures.
+As a human being, I want to have input as a parameter (already parsed) and return result object, that will be marshaled in common code.
