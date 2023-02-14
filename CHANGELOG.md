@@ -4,6 +4,9 @@ How to release a new version:
 - Manually release new version.
 
 ## [Unreleased]
+Added
+- package `http/signature` to simplify defining http handler functions
+- package `http/param` to simplify parsing http path and query parameters
 
 ## [0.5.0] - 2022-01-20
 ### Added
