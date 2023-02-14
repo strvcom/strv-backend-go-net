@@ -18,42 +18,70 @@ var (
 	ErrResponseMarshal = errors.New("marshaling response")
 )
 
+// InputGetterFunc is a function that is used in WrapHandler and WrapHandlerInput to parse request into declared input type.
+// Before calling the inner handler, the InputGetterFunc is called to fill the struct that is then passed to the inner handler.
+// If inner handler does not declare an input type (i.e. WrapHandlerResponse and WrapHandlerError), this function is not called at all.
 type InputGetterFunc func(r *http.Request, dest any) error
 
+// ResponseMarshalerFunc is a function that is used in WrapHandler and related functions to marshal declared response type.
+// After the inner handler succeeds, the ResponseMarshalerFunc receives http.ResponseWriter and http.Request of handled request,
+// and a type that an inner handler function declared as its first (non-error) return value.
+// If the inner handler does not declare such return value (i.e. for WrapHandlerInput and WrapHandlerError),
+// the ResponseMarshalerFunc receives http.NoBody as the src parameter.
 type ResponseMarshalerFunc func(w http.ResponseWriter, r *http.Request, src any) error
 
+// ErrorHandlerFunc is a function that is used in WrapHandler and related functions if any of the steps fail.
+// The passed err is wrapped in one of ErrInputGet, ErrInnerHandler or ErrResponseMarshal to distinguish the
+// step that failed.
+//
+// Note that if the error occurs on unmarshaling response with still valid http.ResponseWriter,
+// and that step already wrote into the writer, the unmarshaled response (including e.g. http headers)
+// may be inconsistent if error handler also writes.
 type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 
+// Wrapper needs to be passed to WrapHandler and related functions. It contains the common handling of parsing http.Request
+// to needed type, marshaling the response of needed type, and handling the errors that occur in any of those steps or
+// in the inner handler (with modified signature)
 type Wrapper struct {
 	inputGetter       InputGetterFunc
 	responseMarshaler ResponseMarshalerFunc
 	errorHandler      ErrorHandlerFunc
 }
 
+// DefaultWrapper Creates a Wrapper with default functions for each needed step.
+//
+// Input is parsed only from http.Request body, using JSON unmarshal.
+// A custom InputGetterFunc is needed to parse also the query and path parameters, but param package can be used to do most.
+//
+// Response is marshaled using a WriteResponse wrapper in parent package, which uses JSON marshal.
+//
+// Error handler also uses a WriteErrorResponse of parent package.
+// It is recommended to replace this to implement any custom error handling (matching any application errors).
+// Default handler only returns http code 400 on unmarshal error and 500 otherwise.
 func DefaultWrapper() Wrapper {
 	return Wrapper{
 		inputGetter:       UnmarshalRequestBody,
-		responseMarshaler: FixedResponseCodeMarshal(http.StatusOK),
+		responseMarshaler: DefaultResponseMarshal,
 		errorHandler:      InputGetErrorHandle,
 	}
 }
 
+// WithInputGetter returns a copy of Wrapper with new InputGetterFunc
 func (w Wrapper) WithInputGetter(f InputGetterFunc) Wrapper {
-	copied := w
-	copied.inputGetter = f
-	return copied
+	w.inputGetter = f
+	return w
 }
 
+// WithResponseMarshaler returns a copy of Wrapper with new ResponseMarshalerFunc
 func (w Wrapper) WithResponseMarshaler(f ResponseMarshalerFunc) Wrapper {
-	copied := w
-	copied.responseMarshaler = f
-	return copied
+	w.responseMarshaler = f
+	return w
 }
 
+// WithErrorHandler returns a copy of Wrapper with new ErrorHandlerFunc
 func (w Wrapper) WithErrorHandler(f ErrorHandlerFunc) Wrapper {
-	copied := w
-	copied.errorHandler = f
-	return copied
+	w.errorHandler = f
+	return w
 }
 
 func inputErrorWithType(target any, innerError error) error {
@@ -72,9 +100,11 @@ func wrapInnerHandlerError(innerError error) error {
 }
 
 // WrapHandler enables a handler with signature of second parameter to be used as a http.HandlerFunc.
-// 1. Before calling such inner handler, the http.request is used to get the input parameter of type TInput for the handler, using InputGetterFunc in Wrapper.
+// 1. Before calling such inner handler, the http.request is used
+// to get the input parameter of type TInput for the handler, using InputGetterFunc in Wrapper.
 // 2. Then the inner handler is called with such created TInput.
-// 3. If the handler succeeds (returns nil error), The first return value (of type TResponse) is passed to ResponseMarshalerFunc of Wrapper.
+// 3. If the handler succeeds (returns nil error), The first return value
+// (of type TResponse) is passed to ResponseMarshalerFunc of Wrapper.
 // If any of the above steps returns error, the ErrorHandlerFunc is called with that error.
 func WrapHandler[TInput any, TResponse any](wrapper Wrapper, handler func(http.ResponseWriter, *http.Request, TInput) (TResponse, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -180,7 +210,7 @@ func FixedResponseCodeMarshal(statusCode int) ResponseMarshalerFunc {
 // DefaultResponseMarshal is a ResponseMarshalerFunc that writes 200 OK http status code with JSON marshaled object.
 // 204 No Content http status code is returned if no response object is provided (i.e. when using WrapHandlerInput or WrapHandlerError)
 func DefaultResponseMarshal(w http.ResponseWriter, _ *http.Request, src any) error {
-	if src == nil {
+	if src == http.NoBody {
 		return httpx.WriteResponse(w, src, http.StatusNoContent)
 	}
 	return httpx.WriteResponse(w, src, http.StatusOK)
