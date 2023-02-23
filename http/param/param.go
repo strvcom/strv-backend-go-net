@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 // TagResolver is a function that decides from a field type what key of http parameter should be searched.
@@ -13,11 +14,31 @@ import (
 type TagResolver func(fieldTag reflect.StructTag) (string, bool)
 
 // FixedTagNameParamTagResolver returns a TagResolver, that matches struct params by specific tag.
-// Example: FixedTagNameParamTagResolver("mytag") matches a field tagged with `mytag:"query_param_name"`
+// Example: FixedTagNameParamTagResolver("mytag") matches a field tagged with `mytag:"param_name"`
 func FixedTagNameParamTagResolver(tagName string) TagResolver {
 	return func(fieldTag reflect.StructTag) (string, bool) {
 		taggedParamName := fieldTag.Get(tagName)
 		return taggedParamName, taggedParamName != ""
+	}
+}
+
+// TagWithModifierTagResolver returns a TagResolver, that matches struct params by specific tag and
+// by a value before a '=' separator.
+// Example: FixedTagNameParamTagResolver("mytag", "mymodifier") matches a field tagged with `mytag:"mymodifier=param_name"`
+func TagWithModifierTagResolver(tagName string, tagModifier string) TagResolver {
+	return func(fieldTag reflect.StructTag) (string, bool) {
+		tagValue := fieldTag.Get(tagName)
+		if tagValue == "" {
+			return "", false
+		}
+		splits := strings.Split(tagValue, "=")
+		if len(splits) != 2 {
+			return "", false
+		}
+		if splits[0] == tagModifier {
+			return splits[1], true
+		}
+		return "", false
 	}
 }
 
@@ -37,11 +58,11 @@ type Parser struct {
 }
 
 // DefaultParser returns query and path parameter Parser with intended struct tags
-// `queryparam:"name"` for query parameters and `pathparam:"name"` for path parameters
+// `param:"query=param_name"` for query parameters and `param:"path=param_name"` for path parameters
 func DefaultParser() Parser {
 	return Parser{
-		QueryParamTagResolver: FixedTagNameParamTagResolver("queryparam"),
-		PathParamTagResolver:  FixedTagNameParamTagResolver("pathparam"),
+		QueryParamTagResolver: TagWithModifierTagResolver("param", "query"),
+		PathParamTagResolver:  TagWithModifierTagResolver("param", "path"),
 		PathParamFunc:         nil, // keep nil, as there is no sensible default of how to get value of path parameter
 	}
 }

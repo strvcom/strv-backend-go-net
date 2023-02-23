@@ -24,10 +24,10 @@ func (m *myComplicatedType) UnmarshalText(text []byte) error {
 }
 
 type structWithSlice struct {
-	SlicePrimitiveField         []string            `queryparam:"a"`
-	SliceCustomField            []myString          `queryparam:"b"`
-	SliceCustomUnmarshalerField []myComplicatedType `queryparam:"c"`
-	OtherField                  string              `queryparam:"d"`
+	SlicePrimitiveField         []string            `param:"query=a"`
+	SliceCustomField            []myString          `param:"query=b"`
+	SliceCustomUnmarshalerField []myComplicatedType `param:"query=c"`
+	OtherField                  string              `param:"query=d"`
 }
 
 func TestParser_Parse_QueryParam_Slice(t *testing.T) {
@@ -84,22 +84,22 @@ func TestParser_Parse_QueryParam_Slice(t *testing.T) {
 }
 
 type structWithPrimitiveTypes struct {
-	Bool    bool    `queryparam:"b"`
-	Int     int     `queryparam:"i0"`
-	Int8    int8    `queryparam:"i1"`
-	Int16   int16   `queryparam:"i2"`
-	Int32   int32   `queryparam:"i3"`
-	Int64   int64   `queryparam:"i4"`
-	Uint    uint    `queryparam:"u0"`
-	Uint8   uint8   `queryparam:"u1"`
-	Uint16  uint16  `queryparam:"u2"`
-	Uint32  uint32  `queryparam:"u3"`
-	Uint64  uint64  `queryparam:"u4"`
-	Float32 float32 `queryparam:"f1"`
-	Float64 float64 `queryparam:"f2"`
-	String  string  `queryparam:"s"`
+	Bool    bool    `param:"query=b"`
+	Int     int     `param:"query=i0"`
+	Int8    int8    `param:"query=i1"`
+	Int16   int16   `param:"query=i2"`
+	Int32   int32   `param:"query=i3"`
+	Int64   int64   `param:"query=i4"`
+	Uint    uint    `param:"query=u0"`
+	Uint8   uint8   `param:"query=u1"`
+	Uint16  uint16  `param:"query=u2"`
+	Uint32  uint32  `param:"query=u3"`
+	Uint64  uint64  `param:"query=u4"`
+	Float32 float32 `param:"query=f1"`
+	Float64 float64 `param:"query=f2"`
+	String  string  `param:"query=s"`
 	// nolint:unused
-	ignoredUnexported string `queryparam:"ignored"`
+	ignoredUnexported string `param:"query=ignored"`
 }
 
 func TestParser_Parse_QueryParam_PrimitiveTypes(t *testing.T) {
@@ -131,11 +131,11 @@ func TestParser_Parse_QueryParam_PrimitiveTypes(t *testing.T) {
 }
 
 type structWithPointers struct {
-	BoolPtr        *bool              `queryparam:"b"`
-	IntPtr         *int               `queryparam:"i"`
-	StrPtr         *string            `queryparam:"s"`
-	Str2Ptr        **string           `queryparam:"sp"`
-	UnmarshalerPtr *myComplicatedType `queryparam:"c"`
+	BoolPtr        *bool              `param:"query=b"`
+	IntPtr         *int               `param:"query=i"`
+	StrPtr         *string            `param:"query=s"`
+	Str2Ptr        **string           `param:"query=sp"`
+	UnmarshalerPtr *myComplicatedType `param:"query=c"`
 }
 
 func TestParser_Parse_QueryParam_Pointers(t *testing.T) {
@@ -190,7 +190,7 @@ func (s valueReceiverUnmarshaler) UnmarshalText(bytes []byte) error {
 }
 
 type StructWithValueReceiverUnmarshal struct {
-	Data valueReceiverUnmarshaler `queryparam:"s"`
+	Data valueReceiverUnmarshaler `param:"query=s"`
 }
 
 func TestParser_Parse_QueryParam_ValueReceiverUnmarshaler(t *testing.T) {
@@ -255,7 +255,7 @@ func TestParser_Parse_QueryParam_InvalidType(t *testing.T) {
 			name:  "map",
 			query: "https://test.com/hello?map=something",
 			resultStruct: &struct {
-				Map map[string]any `queryparam:"map"`
+				Map map[string]any `param:"query=map"`
 			}{},
 		},
 	}
@@ -359,7 +359,7 @@ func TestParser_Parse_QueryParam_CannotBeParsed(t *testing.T) {
 			name:  "invalid int8 in slice",
 			query: "https://test.com/hello?x=127&x=128",
 			resultStruct: &struct {
-				Slice []int8 `queryparam:"x"`
+				Slice []int8 `param:"query=x"`
 			}{},
 			errorTarget: strconv.ErrRange,
 		},
@@ -391,10 +391,10 @@ func (m *maybeShinyObject) UnmarshalText(text []byte) error {
 }
 
 type structWithPathParams struct {
-	Subject string            `pathparam:"subject"`
-	Amount  *int              `pathparam:"amount"`
-	Object  *maybeShinyObject `pathparam:"object"`
-	Nothing string            `pathparam:"nothing"`
+	Subject string            `param:"path=subject"`
+	Amount  *int              `param:"path=amount"`
+	Object  *maybeShinyObject `param:"path=object"`
+	Nothing string            `param:"path=nothing"`
 }
 
 func TestParser_Parse_PathParam(t *testing.T) {
@@ -423,7 +423,7 @@ func TestParser_Parse_PathParam(t *testing.T) {
 }
 
 type simpleStringPathParamStruct struct {
-	Param int `pathparam:"param"`
+	Param int `param:"path=param"`
 }
 
 func TestParser_Parse_PathParam_ParseError(t *testing.T) {

@@ -23,9 +23,9 @@ type User struct {
 }
 
 type ListUsersInput struct {
-	Group   int `pathparam:"group"`
-	Page    int `queryparam:"page"`
-	PerPage int `queryparam:"per_page"`
+	Group   int `param:"path=group"`
+	Page    int `param:"query=page"`
+	PerPage int `param:"query=per_page"`
 }
 
 type CreateUserInput struct {

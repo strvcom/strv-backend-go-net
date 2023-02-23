@@ -2,8 +2,8 @@ Package for parsing path and query parameters from http request into struct, sim
 
 ```
 type MyInputStruct struct {
-	UserID   int   `pathparam:"id"`
-	SomeFlag *bool `queryparam:"flag"`
+	UserID   int   `param:"path=id"`
+	SomeFlag *bool `param:"query=flag"`
 }
 ```
 
