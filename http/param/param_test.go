@@ -3,12 +3,14 @@ package param
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type myString string
@@ -447,6 +449,96 @@ func TestParser_Parse_PathParam_FuncNotDefinedError(t *testing.T) {
 	err := p.Parse(req, &simpleStringPathParamStruct{})
 
 	assert.Error(t, err)
+}
+
+type variousTagsStruct struct {
+	A string `key:"location=val"`
+	B string `key:"location=val=excessive"`
+	C string `key:"no-equal-sign"`
+	D string `another:"location=val"`
+	E string `key:"another=val"`
+}
+
+func TestTagWithModifierTagResolver(t *testing.T) {
+	const correctKey = "key"
+	const correctLocation = "location"
+
+	testCases := []struct {
+		fieldName     string
+		expectedParam string
+		expectedOk    bool
+	}{
+		{
+			fieldName:     "A",
+			expectedParam: "val",
+			expectedOk:    true,
+		},
+		{
+			fieldName:     "B",
+			expectedParam: "",
+			expectedOk:    false,
+		},
+		{
+			fieldName:     "C",
+			expectedParam: "",
+			expectedOk:    false,
+		},
+		{
+			fieldName:     "D",
+			expectedParam: "",
+			expectedOk:    false,
+		},
+		{
+			fieldName:     "E",
+			expectedParam: "",
+			expectedOk:    false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.fieldName, func(t *testing.T) {
+			tagResolver := TagWithModifierTagResolver(correctKey, correctLocation)
+			structField, found := reflect.TypeOf(variousTagsStruct{}).FieldByName(tc.fieldName)
+			require.True(t, found)
+
+			paramName, ok := tagResolver(structField.Tag)
+
+			assert.Equal(t, tc.expectedParam, paramName)
+			assert.Equal(t, tc.expectedOk, ok)
+		})
+	}
+}
+
+func TestFixedTagNameParamTagResolver(t *testing.T) {
+	const correctKey = "key"
+
+	testCases := []struct {
+		fieldName     string
+		expectedParam string
+		expectedOk    bool
+	}{
+		{
+			fieldName:     "A",
+			expectedParam: "location=val",
+			expectedOk:    true,
+		},
+		{
+			fieldName:     "D",
+			expectedParam: "",
+			expectedOk:    false,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.fieldName, func(t *testing.T) {
+			tagResolver := FixedTagNameParamTagResolver(correctKey)
+			structField, found := reflect.TypeOf(variousTagsStruct{}).FieldByName(tc.fieldName)
+			require.True(t, found)
+
+			paramName, ok := tagResolver(structField.Tag)
+
+			assert.Equal(t, tc.expectedParam, paramName)
+			assert.Equal(t, tc.expectedOk, ok)
+		})
+	}
 }
 
 func ptr[T any](x T) *T {

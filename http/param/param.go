@@ -32,6 +32,7 @@ func TagWithModifierTagResolver(tagName string, tagModifier string) TagResolver 
 			return "", false
 		}
 		splits := strings.Split(tagValue, "=")
+		//nolint:gomnd // 2 not really that magic number - one value before '=', one after
 		if len(splits) != 2 {
 			return "", false
 		}
