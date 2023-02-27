@@ -124,29 +124,33 @@ func (p Parser) Parse(r *http.Request, dest any) error {
 }
 
 func (p Parser) parsePathParam(r *http.Request, tag reflect.StructTag, v reflect.Value) error {
-	if paramName, ok := p.PathParamTagResolver(tag); ok {
-		if p.PathParamFunc == nil {
-			return fmt.Errorf("struct's field was tagged for parsing the path parameter (%s) but PathParamFunc to get value of path parameter is not defined", paramName)
-		}
-		paramValue := p.PathParamFunc(r, paramName)
-		if paramValue != "" {
-			err := unmarshalValue(paramValue, v)
-			if err != nil {
-				return fmt.Errorf("unmarshaling path parameter %s: %w", paramName, err)
-			}
+	paramName, ok := p.PathParamTagResolver(tag)
+	if !ok {
+		return nil
+	}
+	if p.PathParamFunc == nil {
+		return fmt.Errorf("struct's field was tagged for parsing the path parameter (%s) but PathParamFunc to get value of path parameter is not defined", paramName)
+	}
+	paramValue := p.PathParamFunc(r, paramName)
+	if paramValue != "" {
+		err := unmarshalValue(paramValue, v)
+		if err != nil {
+			return fmt.Errorf("unmarshaling path parameter %s: %w", paramName, err)
 		}
 	}
 	return nil
 }
 
 func (p Parser) parseQueryParam(r *http.Request, tag reflect.StructTag, v reflect.Value) error {
-	if paramName, ok := p.QueryParamTagResolver(tag); ok {
-		query := r.URL.Query()
-		if texts, ok := (map[string][]string)(query)[paramName]; ok && len(texts) > 0 {
-			err := unmarshalValueOrSlice(texts, v)
-			if err != nil {
-				return fmt.Errorf("unmarshaling query parameter %s: %w", paramName, err)
-			}
+	paramName, ok := p.QueryParamTagResolver(tag)
+	if !ok {
+		return nil
+	}
+	query := r.URL.Query()
+	if values, ok := query[paramName]; ok && len(values) > 0 {
+		err := unmarshalValueOrSlice(values, v)
+		if err != nil {
+			return fmt.Errorf("unmarshaling query parameter %s: %w", paramName, err)
 		}
 	}
 	return nil
