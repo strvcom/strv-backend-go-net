@@ -20,7 +20,7 @@ func WithEncodeFunc(fn EncodeFunc) ResponseOption {
 	}
 }
 
-// DecodeJSON decodes data using JSON marshalling into the type of parameter v.
+// DecodeJSON decodes data using JSON marshaling into the type of parameter v.
 func DecodeJSON(data any, v any) error {
 	b, err := json.Marshal(data)
 	if err != nil {

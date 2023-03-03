@@ -5,6 +5,11 @@ How to release a new version:
 
 ## [Unreleased]
 
+## [0.6.0] - 2023-03-03
+### Added
+- package `http/signature` to simplify defining http handler functions
+- package `http/param` to simplify parsing http path and query parameters
+
 ## [0.5.0] - 2022-01-20
 ### Added
 - `ErrorResponseOptions` contains public error message.
@@ -40,7 +45,8 @@ How to release a new version:
 ### Added
 - Added Changelog.
 
-[Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.2.0...v0.3.0
