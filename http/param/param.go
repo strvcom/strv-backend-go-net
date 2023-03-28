@@ -106,16 +106,7 @@ func (p Parser) Parse(r *http.Request, dest any) error {
 			continue
 		}
 		valueField := v.Field(i)
-		// Zero the value, even if it would not be set by following path or query parameter.
-		// This will cause potential partial result from previous parser (e.g. json.Unmarshal) to be discarded on
-		// fields that are tagged for path or query parameter.
-		valueField.Set(reflect.Zero(typeField.Type))
-		tag := typeField.Tag
-		err := p.parseQueryParam(r, tag, valueField)
-		if err != nil {
-			return err
-		}
-		err = p.parsePathParam(r, tag, valueField)
+		err := p.parseParam(r, typeField, valueField)
 		if err != nil {
 			return err
 		}
@@ -123,11 +114,38 @@ func (p Parser) Parse(r *http.Request, dest any) error {
 	return nil
 }
 
-func (p Parser) parsePathParam(r *http.Request, tag reflect.StructTag, v reflect.Value) error {
-	paramName, ok := p.PathParamTagResolver(tag)
-	if !ok {
+func (p Parser) parseParam(r *http.Request, typeField reflect.StructField, v reflect.Value) error {
+	tag := typeField.Tag
+	pathParamName, okPath := p.PathParamTagResolver(tag)
+	queryParamName, okQuery := p.QueryParamTagResolver(tag)
+	if !okPath && !okQuery {
+		// do nothing if tagged neither for query nor param
 		return nil
 	}
+
+	// Zero the value, even if it would not be set by following path or query parameter.
+	// This will cause potential partial result from previous parser (e.g. json.Unmarshal) to be discarded on
+	// fields that are tagged for path or query parameter.
+	v.Set(reflect.Zero(typeField.Type))
+
+	if okPath {
+		err := p.parsePathParam(r, pathParamName, v)
+		if err != nil {
+			return err
+		}
+	}
+
+	if okQuery {
+		err := p.parseQueryParam(r, queryParamName, v)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (p Parser) parsePathParam(r *http.Request, paramName string, v reflect.Value) error {
 	if p.PathParamFunc == nil {
 		return fmt.Errorf("struct's field was tagged for parsing the path parameter (%s) but PathParamFunc to get value of path parameter is not defined", paramName)
 	}
@@ -141,11 +159,7 @@ func (p Parser) parsePathParam(r *http.Request, tag reflect.StructTag, v reflect
 	return nil
 }
 
-func (p Parser) parseQueryParam(r *http.Request, tag reflect.StructTag, v reflect.Value) error {
-	paramName, ok := p.QueryParamTagResolver(tag)
-	if !ok {
-		return nil
-	}
+func (p Parser) parseQueryParam(r *http.Request, paramName string, v reflect.Value) error {
 	query := r.URL.Query()
 	if values, ok := query[paramName]; ok && len(values) > 0 {
 		err := unmarshalValueOrSlice(values, v)
