@@ -451,6 +451,26 @@ func TestParser_Parse_PathParam_FuncNotDefinedError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+type otherFieldsStruct struct {
+	Q     string `param:"query=q"`
+	Other string `json:"other"`
+}
+
+func TestParser_Parse_DoesNotOverwrite(t *testing.T) {
+	p := DefaultParser()
+	req := httptest.NewRequest(http.MethodGet, "https://test.com/hello?q=input", nil)
+	expected := otherFieldsStruct{
+		Q:     "input",
+		Other: "already filled",
+	}
+
+	result := otherFieldsStruct{Other: "already filled"}
+	err := p.Parse(req, &result)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, result)
+}
+
 type variousTagsStruct struct {
 	A string `key:"location=val"`
 	B string `key:"location=val=excessive"`
