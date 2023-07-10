@@ -5,6 +5,10 @@ How to release a new version:
 
 ## [Unreleased]
 
+## [0.6.2] - 2022-06-27
+### Fixed
+- Error logging when terminating HTTP server.
+
 ## [0.6.1] - 2022-03-28
 ### Changed
 - package `http/param` does not zero the field if not tagged with any relevant tags
@@ -49,7 +53,8 @@ How to release a new version:
 ### Added
 - Added Changelog.
 
-[Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/strvcom/strv-backend-go-net/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/strvcom/strv-backend-go-net/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.4.0...v0.5.0

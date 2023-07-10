@@ -90,9 +90,9 @@ func (s *Server) Run(ctx context.Context) error {
 	select {
 	case err := <-errCh:
 		if errors.Is(err, http.ErrServerClosed) {
-			s.logger.Error("server stopped: error received", err)
-		} else {
 			s.logger.Debug("server stopped: server closed")
+		} else {
+			s.logger.Error("server stopped: error received", err)
 		}
 	case <-ctx.Done():
 		s.logger.Error("server stopped: context closed", ctx.Err())
