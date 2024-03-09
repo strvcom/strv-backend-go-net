@@ -11,16 +11,13 @@ Go package facilitating writing API applications in a fast and easy manner.
 ### errors
 Definition of common errors.
 
-### logger
-Interface `ServerLogger` implements common logging methods.
-
 ### net
 Common functionality that comes in handy regardless of the used API architecture. `net` currently supports generating request IDs with some helper methods.
 
 ### http
 Wrapper around the Go native http server. `http` defines the `Server` that can be configured by the `ServerConfig`. Implemented features:
 - Started http server can be easily stopped by cancelling the context that is passed by the `Run` method.
-- The `Server` can be configured with a logger for logging important information during starting/ending of the server.
+- The `Server` can be configured with a slog.Logger for logging important information during starting/ending of the server.
 - The `Server` listens for `SIGINT` and `SIGTERM` signals so it can be stopped by firing the signal.
 - By the `ServerConfig` can be configured functions to be called before the `Server` ends.
 
@@ -46,7 +43,16 @@ import (
 
 func main() {
 	...
-	
+	h := slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{
+		Level: level,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			if a.Key == slog.TimeKey {
+				a.Value = slog.StringValue(a.Value.Time().Format("2006-01-02T15:04:05.000Z"))
+			}
+			return a
+		},
+	})
+	l := slog.New(h)
 	serverConfig := httpx.ServerConfig{
 		Addr:    ":8080",
 		Handler: handler(), // define your http handler
@@ -58,11 +64,11 @@ func main() {
 			},
 		},
 		Limits: nil,
-		Logger: util.NewServerLogger("httpx.Server"), // wrapper around zap logger to implement httpx logging interface
+		Logger: l.WithGroup("httpx.Server"), // the server expects *slog.Logger
 	}
 	server := httpx.NewServer(&serverConfig)
 	if err = server.Start(ctx); err != nil {
-		logger.Fatal("HTTP server unexpectedly ended", zap.Error(err))
+		l.Error("HTTP server unexpectedly ended", slog.Any("error", err))
 	}
 }
 ```

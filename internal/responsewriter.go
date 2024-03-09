@@ -3,23 +3,22 @@ package internal
 import (
 	"bufio"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"sync/atomic"
-
-	"go.strv.io/net/logger"
 )
 
 type ResponseWriter struct {
 	http.ResponseWriter
 	statusCode        int
 	calledWriteHeader int32
-	logger            logger.ServerLogger
+	logger            *slog.Logger
 	err               error
 	panic             any
 }
 
-func NewResponseWriter(w http.ResponseWriter, l logger.ServerLogger) *ResponseWriter {
+func NewResponseWriter(w http.ResponseWriter, l *slog.Logger) *ResponseWriter {
 	return &ResponseWriter{
 		ResponseWriter:    w,
 		statusCode:        http.StatusOK,
@@ -39,8 +38,8 @@ func (r *ResponseWriter) WriteHeader(statusCode int) {
 		return
 	}
 	r.logger.With(
-		logger.Any("current_status_code", r.statusCode),
-		logger.Any("ignored_status_code", statusCode),
+		slog.Int("current_status_code", r.statusCode),
+		slog.Int("ignored_status_code", statusCode),
 	).Warn("WriteHeader multiple call")
 }
 

@@ -1,12 +1,13 @@
 package http
 
 import (
+	"log/slog"
 	"net/http"
+	"runtime/debug"
 	"time"
 
 	"go.strv.io/net"
 	"go.strv.io/net/internal"
-	"go.strv.io/net/logger"
 )
 
 const (
@@ -40,10 +41,26 @@ func RequestIDMiddleware(f RequestIDFunc) func(http.Handler) http.Handler {
 	}
 }
 
+type RecoverMiddlewareOptions struct {
+	enableStackTrace bool
+}
+
+type RecoverMiddlewareOption func(*RecoverMiddlewareOptions)
+
+func WithStackTrace() RecoverMiddlewareOption {
+	return func(opts *RecoverMiddlewareOptions) {
+		opts.enableStackTrace = true
+	}
+}
+
 // RecoverMiddleware calls next handler and recovers from a panic.
 // If a panic occurs, log this event, set http.StatusInternalServerError as a status code
 // and save a panic object into the response writer.
-func RecoverMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
+func RecoverMiddleware(l *slog.Logger, opts ...RecoverMiddlewareOption) func(http.Handler) http.Handler {
+	options := RecoverMiddlewareOptions{}
+	for _, o := range opts {
+		o(&options)
+	}
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
@@ -56,10 +73,14 @@ func RecoverMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 					rw.SetPanicObject(re)
 					rw.WriteHeader(http.StatusInternalServerError)
 
-					l.With(
-						logger.Any("err", re),
-						logger.Any(requestIDLogFieldName, net.RequestIDFromCtx(r.Context())),
-					).Error("panic recover", nil)
+					logAttributes := []slog.Attr{
+						slog.Any(requestIDLogFieldName, net.RequestIDFromCtx(r.Context())),
+						slog.Any("error", re),
+					}
+					if options.enableStackTrace {
+						logAttributes = append(logAttributes, slog.String("trace", string(debug.Stack())))
+					}
+					l.LogAttrs(r.Context(), slog.LevelError, "panic recover", logAttributes...)
 				}
 			}()
 			next.ServeHTTP(w, r)
@@ -77,7 +98,7 @@ func RecoverMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 //   - Panic object if exists
 //
 // If the status code >= http.StatusInternalServerError, logs with error level, info otherwise.
-func LoggingMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
+func LoggingMiddleware(l *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rw, ok := w.(*internal.ResponseWriter)
@@ -101,7 +122,7 @@ func LoggingMiddleware(l logger.ServerLogger) func(http.Handler) http.Handler {
 			}
 
 			if statusCode >= http.StatusInternalServerError {
-				WithData(l, ld).Error("request processed", nil)
+				WithData(l, ld).Error("request processed")
 			} else {
 				WithData(l, ld).Info("request processed")
 			}
@@ -127,20 +148,20 @@ type LogData struct {
 	Panic              any
 }
 
-// WithData returns logger with filled fields.
-func WithData(l logger.ServerLogger, ld LogData) logger.ServerLogger {
+// WithData returns slog with filled fields.
+func WithData(l *slog.Logger, ld LogData) *slog.Logger {
 	l = l.With(
-		logger.Any("method", ld.Method),
-		logger.Any("path", ld.Path),
-		logger.Any("status_code", ld.ResponseStatusCode),
-		logger.Any("request_id", ld.RequestID),
-		logger.Any("duration_ms", ld.Duration.Milliseconds()),
+		slog.Any("method", ld.Method),
+		slog.String("path", ld.Path),
+		slog.Int("status_code", ld.ResponseStatusCode),
+		slog.String("request_id", ld.RequestID),
+		slog.Duration("duration_ms", ld.Duration),
 	)
 	if ld.Err != nil {
-		l = l.With(logger.Any("err", ld.Err.Error()))
+		l = l.With(slog.Any("error", ld.Err))
 	}
 	if ld.Panic != nil {
-		l = l.With(logger.Any("panic", ld.Panic))
+		l = l.With(slog.Any("panic", ld.Panic))
 	}
 	return l
 }

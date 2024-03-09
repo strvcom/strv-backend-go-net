@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -13,7 +14,6 @@ import (
 
 	neterrors "go.strv.io/net/errors"
 	"go.strv.io/net/internal"
-	"go.strv.io/net/logger"
 )
 
 func NewServer(config *ServerConfig) *Server {
@@ -22,7 +22,7 @@ func NewServer(config *ServerConfig) *Server {
 	}
 
 	if config.Logger == nil {
-		config.Logger = &internal.NopLogger{}
+		config.Logger = internal.NewNopLogger()
 	}
 
 	s := &Server{
@@ -55,7 +55,7 @@ func NewServer(config *ServerConfig) *Server {
 }
 
 type Server struct {
-	logger logger.ServerLogger
+	logger *slog.Logger
 	server *http.Server
 
 	signalsListener chan os.Signal
@@ -69,7 +69,7 @@ type Server struct {
 // Passed context is used as base context of all http requests and to shutdown server gracefully.
 func (s *Server) Run(ctx context.Context) error {
 	if s.logger == nil {
-		s.logger = &internal.NopLogger{}
+		s.logger = internal.NewNopLogger()
 	}
 
 	cCtx, cancel := context.WithCancel(ctx)
@@ -92,22 +92,22 @@ func (s *Server) Run(ctx context.Context) error {
 		if errors.Is(err, http.ErrServerClosed) {
 			s.logger.Debug("server stopped: server closed")
 		} else {
-			s.logger.Error("server stopped: error received", err)
+			s.logger.Error("server stopped: error received", slog.Any("error", err))
 		}
 	case <-ctx.Done():
-		s.logger.Error("server stopped: context closed", ctx.Err())
+		s.logger.Error("server stopped: context closed", slog.Any("error", ctx.Err()))
 	case sig := <-s.signalsListener:
 		s.logger.With(
-			logger.Any("signal", sig),
-		).Error("server stopped: signal received", neterrors.ErrServerInterrupted)
+			slog.Any("signal", sig),
+		).Error("server stopped: signal received", slog.Any("error", neterrors.ErrServerInterrupted))
 	}
 
 	s.logger.With(
-		logger.Any("timeout", s.shutdownTimeout.String()),
+		slog.Duration("timeout", *s.shutdownTimeout),
 	).Debug("waiting for server shutdown...")
 
 	if err := s.server.Shutdown(context.Background()); err != nil {
-		s.logger.Error("server shutdown", err)
+		s.logger.Error("server shutdown", slog.Any("error", err))
 		return err
 	}
 	defer s.logger.Debug("server shutdown complete")
