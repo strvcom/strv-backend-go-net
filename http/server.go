@@ -68,10 +68,6 @@ type Server struct {
 // Run calls ListenAndServe but returns error only if err != http.ErrServerClosed.
 // Passed context is used as base context of all http requests and to shutdown server gracefully.
 func (s *Server) Run(ctx context.Context) error {
-	if s.logger == nil {
-		s.logger = internal.NewNopLogger()
-	}
-
 	cCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 

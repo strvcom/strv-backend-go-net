@@ -74,11 +74,11 @@ func RecoverMiddleware(l *slog.Logger, opts ...RecoverMiddlewareOption) func(htt
 					rw.WriteHeader(http.StatusInternalServerError)
 
 					logAttributes := []slog.Attr{
-						slog.Any(requestIDLogFieldName, net.RequestIDFromCtx(r.Context())),
+						slog.String(requestIDLogFieldName, net.RequestIDFromCtx(r.Context())),
 						slog.Any("error", re),
 					}
 					if options.enableStackTrace {
-						logAttributes = append(logAttributes, slog.String("trace", string(debug.Stack())))
+						logAttributes = append(logAttributes, slog.String("stack_trace", string(debug.Stack())))
 					}
 					l.LogAttrs(r.Context(), slog.LevelError, "panic recover", logAttributes...)
 				}

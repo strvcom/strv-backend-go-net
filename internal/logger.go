@@ -5,14 +5,14 @@ import (
 	"log/slog"
 )
 
-func NewNopLogger() *slog.Logger {
-	return slog.New(nopHandler{})
-}
-
 // NopLogger is a no-op logger that discards all of the log messages.
 // This logger is used in the case no other logger is provided to the server.
 type NopLogger struct {
 	slog.Logger
+}
+
+func NewNopLogger() *slog.Logger {
+	return slog.New(nopHandler{})
 }
 
 type nopHandler struct{}
