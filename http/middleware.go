@@ -111,26 +111,24 @@ func LoggingMiddleware(l *slog.Logger) func(http.Handler) http.Handler {
 			statusCode := rw.StatusCode()
 			requestID := net.RequestIDFromCtx(r.Context())
 
-			ld := LogData{
+			ld := RequestData{
 				Path:               r.URL.EscapedPath(),
 				Method:             r.Method,
 				RequestID:          requestID,
 				Duration:           time.Since(requestStart),
 				ResponseStatusCode: statusCode,
-				Err:                rw.ErrorObject(),
-				Panic:              rw.PanicObject(),
 			}
 
 			if statusCode >= http.StatusInternalServerError {
-				WithData(l, ld).Error("request processed")
+				withRequestData(l, rw, ld).Error("request processed")
 			} else {
-				WithData(l, ld).Info("request processed")
+				withRequestData(l, rw, ld).Info("request processed")
 			}
 		})
 	}
 }
 
-// LogData contains processed request data for logging purposes.
+// RequestData contains processed request data for logging purposes.
 // Path is path from URL of the request.
 // Method is HTTP request method.
 // Duration is how long it took to process whole request.
@@ -138,30 +136,34 @@ func LoggingMiddleware(l *slog.Logger) func(http.Handler) http.Handler {
 // RequestID is unique identifier of request.
 // Err is error object containing error message.
 // Panic is panic object containing error message.
-type LogData struct {
+type RequestData struct {
 	Path               string
 	Method             string
 	Duration           time.Duration
 	ResponseStatusCode int
 	RequestID          string
-	Err                error
-	Panic              any
 }
 
-// WithData returns slog with filled fields.
-func WithData(l *slog.Logger, ld LogData) *slog.Logger {
-	l = l.With(
-		slog.Any("method", ld.Method),
-		slog.String("path", ld.Path),
-		slog.Int("status_code", ld.ResponseStatusCode),
-		slog.String("request_id", ld.RequestID),
-		slog.Duration("duration_ms", ld.Duration),
-	)
-	if ld.Err != nil {
-		l = l.With(slog.Any("error", ld.Err))
+func (r RequestData) LogValue() slog.Value {
+	attr := []slog.Attr{
+		slog.String("id", r.RequestID),
+		slog.String("method", r.Method),
+		slog.String("path", r.Path),
+		slog.Int("status_code", r.ResponseStatusCode),
+		slog.Duration("duration_ms", r.Duration),
 	}
-	if ld.Panic != nil {
-		l = l.With(slog.Any("panic", ld.Panic))
+	return slog.GroupValue(attr...)
+}
+
+// withRequestData returns slog with filled fields.
+func withRequestData(l *slog.Logger, rw *internal.ResponseWriter, rd RequestData) *slog.Logger {
+	errorObject := rw.ErrorObject()
+	panicObject := rw.PanicObject()
+	if errorObject != nil {
+		l = l.With("error", errorObject)
 	}
-	return l
+	if panicObject != nil {
+		l = l.With("panic", panicObject)
+	}
+	return l.With("request", rd)
 }
