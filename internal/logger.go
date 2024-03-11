@@ -1,18 +1,34 @@
 package internal
 
-import "go.strv.io/net/logger"
+import (
+	"context"
+	"log/slog"
+)
 
-// NopLogger is a no-op logger that is used if no logger is present.
-type NopLogger struct{}
-
-func (l *NopLogger) With(...logger.Field) logger.ServerLogger {
-	return l
+// NopLogger is a no-op logger that discards all of the log messages.
+// This logger is used in the case no other logger is provided to the server.
+type NopLogger struct {
+	slog.Logger
 }
 
-func (*NopLogger) Info(string) {}
+func NewNopLogger() *slog.Logger {
+	return slog.New(nopHandler{})
+}
 
-func (*NopLogger) Debug(string) {}
+type nopHandler struct{}
 
-func (*NopLogger) Warn(string) {}
+func (nopHandler) Enabled(context.Context, slog.Level) bool {
+	return false
+}
 
-func (*NopLogger) Error(string, error) {}
+func (nopHandler) Handle(context.Context, slog.Record) error {
+	return nil
+}
+
+func (n nopHandler) WithAttrs([]slog.Attr) slog.Handler {
+	return n
+}
+
+func (n nopHandler) WithGroup(string) slog.Handler {
+	return n
+}

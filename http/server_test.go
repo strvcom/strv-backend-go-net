@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"go.strv.io/net/internal"
 )
 
 type cancellableContext struct {
@@ -66,6 +67,7 @@ func TestNewServer(t *testing.T) {
 			want: func() *Server {
 				//nolint:gosec
 				s := &Server{
+					logger:           internal.NewNopLogger(),
 					server:           &http.Server{},
 					shutdownTimeout:  &defaultShutdownTimeout,
 					doBeforeShutdown: []ServerHookFunc(nil),
@@ -173,6 +175,7 @@ func TestServer_Start(t *testing.T) {
 			}
 
 			s := &Server{
+				logger:           internal.NewNopLogger(),
 				server:           tt.fields.server,
 				signalsListener:  tt.fields.signalsListener,
 				shutdownTimeout:  tt.fields.shutdownTimeout,
