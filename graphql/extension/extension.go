@@ -65,7 +65,7 @@ func checkRecursionLimitByTypeAndField(rCtx recursionContext, typeName string, s
 		if newCount > rCtx.maxRecursion {
 			return gqlerror.Errorf("too many nesting on %s.%s", nesting.parentTypeName, nesting.childFieldName)
 		}
-		rCtx.typeAndFieldCount[nesting] += newCount
+		rCtx.typeAndFieldCount[nesting] = newCount
 		err := checkRecursionLimitByTypeAndField(rCtx, collectedField.Definition.Type.Name(), collectedField.SelectionSet)
 		if err != nil {
 			return err

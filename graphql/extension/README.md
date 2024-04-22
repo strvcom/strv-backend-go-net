@@ -11,7 +11,7 @@ gqlServer.Use(RecursionLimitByTypeAndField(1))
 ```
 
 This allow only one of each "type.field" field access in a query. For following examples,
-consider that both root `user` and `User.friends` returns a type `User` (although firends may return a list).
+consider that both root `user` and `User.friends` returns a type `User` (although friends may return a list).
 
 Allows:
 ```graphql

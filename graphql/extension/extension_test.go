@@ -7,7 +7,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/executor"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 	"github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -62,7 +62,7 @@ func TestRecursionLimitByTypeAndField(t *testing.T) {
 				Query:         queries,
 				OperationName: tt.operationName,
 			})
-			require.Equal(t, err, tt.expectedErr)
+			assert.Equal(t, tt.expectedErr, err)
 		})
 	}
 }
@@ -72,7 +72,7 @@ var sources = []*ast.Source{
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
-var _ graphql.ExecutableSchema = &executableSchema{}
+var _ graphql.ExecutableSchema = executableSchema{}
 
 type executableSchema struct{}
 
