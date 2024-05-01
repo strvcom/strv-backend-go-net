@@ -1,0 +1,14 @@
+type User {
+  id: String!
+  friends: [User!]!
+  items: [Item!]!
+}
+
+type Item {
+  id: String!
+  owners: [User!]!
+}
+
+type Query {
+  user: User!
+}

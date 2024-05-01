@@ -1,0 +1,71 @@
+query Allowed {
+  user {
+    id
+    friends {
+      id
+    }
+  }
+}
+
+query RecursionExceeded {
+  user {
+    id
+    friends {
+      id
+      friends {
+        id
+      }
+    }
+  }
+}
+
+query InterleavedTypesAllowed {
+  user {
+    id
+    items {
+      id
+      owners {
+        id
+      }
+    }
+  }
+}
+
+query InterleavedTypesRecursionExceeded {
+  user {
+    id
+    items {
+      id
+      owners {
+        id
+        items {
+          id
+        }
+      }
+    }
+  }
+}
+
+query DifferentSubtreeAllowed {
+  user {
+    id
+    friends {
+      id
+      items {
+        id
+        owners {
+          id
+        }
+      }
+    }
+    items {
+      id
+      owners {
+        id
+        friends {
+          id
+        }
+      }
+    }
+  }
+}
