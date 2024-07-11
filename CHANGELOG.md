@@ -4,6 +4,8 @@ How to release a new version:
 - Manually release new version.
 
 ## [Unreleased]
+
+## [0.7.1] - 2024-07-11
 ### Changed
 - Canceling `Server.Run()` context no longer cancels requests base context.
 
