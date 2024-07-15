@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -66,15 +65,8 @@ type Server struct {
 }
 
 // Run calls ListenAndServe but returns error only if err != http.ErrServerClosed.
-// Passed context is used as base context of all http requests and to shutdown server gracefully.
+// Server is shutdown when passed context is canceled, or when SIGTERM is received.
 func (s *Server) Run(ctx context.Context) error {
-	cCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	s.server.BaseContext = func(_ net.Listener) context.Context {
-		return cCtx
-	}
-
 	errCh := make(chan error, 1)
 	go func() {
 		errCh <- s.server.ListenAndServe()
@@ -91,11 +83,11 @@ func (s *Server) Run(ctx context.Context) error {
 			s.logger.Error("server stopped: error received", slog.Any("error", err))
 		}
 	case <-ctx.Done():
-		s.logger.Error("server stopped: context closed", slog.Any("error", ctx.Err()))
+		s.logger.Info("server stopped: context closed", slog.Any("error", ctx.Err()))
 	case sig := <-s.signalsListener:
 		s.logger.With(
 			slog.Any("signal", sig),
-		).Error("server stopped: signal received", slog.Any("error", neterrors.ErrServerInterrupted))
+		).Info("server stopped: signal received", slog.Any("error", neterrors.ErrServerInterrupted))
 	}
 
 	s.logger.With(
@@ -139,6 +131,10 @@ func (s *Server) beforeShutdown() {
 }
 
 type ServerHooks struct {
+	// Each ServerHookFunc will be run in parallel with the main http.Server.Shutdown(). Server.Run() will block
+	// until Shutdown() and all BeforeShutdown hooks completes (or ShutdownTimeout passes).
+	// Passed context is canceled after ShutdownTimeout passes, but at that point, completion of the hook
+	// is not waited for anymore (as Run returns after such timeout).
 	BeforeShutdown []ServerHookFunc
 }
 
