@@ -1,16 +1,14 @@
 GO = $(shell which go)
 
-.PHONY:
-	test \
-	fmt \
-	vet
-
+.PHONY: fmt
 fmt:
 	$(GO) fmt ./...
 
+.PHONY: vet
 vet:
 	$(GO) vet ./...
 
+.PHONY: test
 test:
 	set -eo pipefail
 	$(GO) test ./... -cover
