@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"go.strv.io/net"
-	"go.strv.io/net/internal"
 )
 
 const (
@@ -65,9 +64,9 @@ func RecoverMiddleware(l *slog.Logger, opts ...RecoverMiddlewareOption) func(htt
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if re := recover(); re != nil {
-					rw, ok := w.(*internal.ResponseWriter)
+					rw, ok := w.(*ResponseWriter)
 					if !ok {
-						rw = internal.NewResponseWriter(w, l)
+						rw = NewResponseWriter(w, l)
 					}
 
 					rw.SetPanicObject(re)
@@ -101,9 +100,9 @@ func RecoverMiddleware(l *slog.Logger, opts ...RecoverMiddlewareOption) func(htt
 func LoggingMiddleware(l *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			rw, ok := w.(*internal.ResponseWriter)
+			rw, ok := w.(*ResponseWriter)
 			if !ok {
-				rw = internal.NewResponseWriter(w, l)
+				rw = NewResponseWriter(w, l)
 			}
 
 			requestStart := time.Now()
@@ -156,7 +155,7 @@ func (r RequestData) LogValue() slog.Value {
 }
 
 // withRequestData returns slog with filled fields.
-func withRequestData(l *slog.Logger, rw *internal.ResponseWriter, rd RequestData) *slog.Logger {
+func withRequestData(l *slog.Logger, rw *ResponseWriter, rd RequestData) *slog.Logger {
 	errorObject := rw.ErrorObject()
 	panicObject := rw.PanicObject()
 	if errorObject != nil {

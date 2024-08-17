@@ -29,7 +29,7 @@ When you are creating a [feature request](#how-do-i-submit-a-feature-request), p
 Planned features are tracked as [GitHub issues](https://github.com/strvcom/strv-backend-go-net/issues).
 Create an issue on the repository and provide the following information:
 - Use a clear and descriptive title for the issue to identify the feature request.
-- Provide a step-by-step description of the feature request in as much details as possible.
+- Provide a step-by-step description of the feature request in as many details as possible.
 - Provide specific examples to demonstrate the usage of the feature. Include copy/pasteable snippets which you use in those examples, as Markdown code blocks.
 - Describe the current behavior and explain which behavior you expected to see instead and why.
 - Explain why this feature would be useful to most users.
