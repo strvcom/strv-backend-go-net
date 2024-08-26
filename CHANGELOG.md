@@ -10,6 +10,9 @@ How to release a new version:
 ### Removed
 - package `http/param`: can no longer change the tag value prefix the parser reacts to (e.g. from `param:"query=q"` to `param:"myPrefix=q"`)
 
+### Changed
+- ResponseWriter has been moved to the `http` package and is no longer private.
+
 ## [0.7.1] - 2024-07-11
 ### Changed
 - Canceling `Server.Run()` context no longer cancels requests base context.
