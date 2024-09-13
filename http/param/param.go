@@ -9,41 +9,29 @@ import (
 	"strings"
 )
 
-// TagResolver is a function that decides from a field type what key of http parameter should be searched.
-// Second return value should return whether the key should be searched in http parameter at all.
+const (
+	defaultTagName      = "param"
+	queryTagValuePrefix = "query"
+	pathTagValuePrefix  = "path"
+)
+
+// TagResolver is a function that decides from a field tag what parameter should be searched.
+// Second return value should return whether the parameter should be searched at all.
 type TagResolver func(fieldTag reflect.StructTag) (string, bool)
 
-// FixedTagNameParamTagResolver returns a TagResolver, that matches struct params by specific tag.
-// Example: FixedTagNameParamTagResolver("mytag") matches a field tagged with `mytag:"param_name"`
-func FixedTagNameParamTagResolver(tagName string) TagResolver {
-	return func(fieldTag reflect.StructTag) (string, bool) {
-		taggedParamName := fieldTag.Get(tagName)
-		return taggedParamName, taggedParamName != ""
-	}
-}
-
-// TagWithModifierTagResolver returns a TagResolver, that matches struct params by specific tag and
-// by a value before a '=' separator.
-// Example: FixedTagNameParamTagResolver("mytag", "mymodifier") matches a field tagged with `mytag:"mymodifier=param_name"`
-func TagWithModifierTagResolver(tagName string, tagModifier string) TagResolver {
+// TagNameResolver returns a TagResolver that returns the value of tag with tagName, and whether the tag exists at all.
+// It can be used to replace Parser.ParamTagResolver to change what tag name the Parser reacts to.
+func TagNameResolver(tagName string) TagResolver {
 	return func(fieldTag reflect.StructTag) (string, bool) {
 		tagValue := fieldTag.Get(tagName)
 		if tagValue == "" {
 			return "", false
 		}
-		splits := strings.Split(tagValue, "=")
-		//nolint:gomnd // 2 not really that magic number - one value before '=', one after
-		if len(splits) != 2 {
-			return "", false
-		}
-		if splits[0] == tagModifier {
-			return splits[1], true
-		}
-		return "", false
+		return tagValue, true
 	}
 }
 
-// PathParamFunc is a function that returns value of specified http path parameter
+// PathParamFunc is a function that returns value of specified http path parameter.
 type PathParamFunc func(r *http.Request, key string) string
 
 // Parser can Parse query and path parameters from http.Request into a struct.
@@ -53,18 +41,16 @@ type PathParamFunc func(r *http.Request, key string) string
 // PathParamFunc is for getting path parameter from http.Request, as each http router handles it in different way (if at all).
 // For example for chi, use WithPathParamFunc(chi.URLParam) to be able to use tags for path parameters.
 type Parser struct {
-	QueryParamTagResolver TagResolver
-	PathParamTagResolver  TagResolver
-	PathParamFunc         PathParamFunc
+	ParamTagResolver TagResolver
+	PathParamFunc    PathParamFunc
 }
 
 // DefaultParser returns query and path parameter Parser with intended struct tags
 // `param:"query=param_name"` for query parameters and `param:"path=param_name"` for path parameters
 func DefaultParser() Parser {
 	return Parser{
-		QueryParamTagResolver: TagWithModifierTagResolver("param", "query"),
-		PathParamTagResolver:  TagWithModifierTagResolver("param", "path"),
-		PathParamFunc:         nil, // keep nil, as there is no sensible default of how to get value of path parameter
+		ParamTagResolver: TagNameResolver(defaultTagName),
+		PathParamFunc:    nil, // keep nil, as there is no sensible default of how to get value of path parameter
 	}
 }
 
@@ -116,8 +102,8 @@ func (p Parser) Parse(r *http.Request, dest any) error {
 
 func (p Parser) parseParam(r *http.Request, typeField reflect.StructField, v reflect.Value) error {
 	tag := typeField.Tag
-	pathParamName, okPath := p.PathParamTagResolver(tag)
-	queryParamName, okQuery := p.QueryParamTagResolver(tag)
+	pathParamName, okPath := p.resolvePath(tag)
+	queryParamName, okQuery := p.resolveQuery(tag)
 	if !okPath && !okQuery {
 		// do nothing if tagged neither for query nor param
 		return nil
@@ -245,4 +231,34 @@ func unmarshalPrimitiveValue(text string, dest reflect.Value) error {
 		return fmt.Errorf("unsupported field type %s", dest.Type().Name())
 	}
 	return nil
+}
+
+// resolveTagValueWithModifier returns a parameter value in tag value containing a prefix "tagModifier=".
+// Example: resolveTagValueWithModifier("query=param_name", "query") returns "param_name", true.
+func (p Parser) resolveTagValueWithModifier(tagValue string, tagModifier string) (string, bool) {
+	splits := strings.Split(tagValue, "=")
+	//nolint:gomnd // 2 not really that magic number - one value before '=', one after
+	if len(splits) != 2 {
+		return "", false
+	}
+	if splits[0] == tagModifier {
+		return splits[1], true
+	}
+	return "", false
+}
+
+func (p Parser) resolveTagWithModifier(fieldTag reflect.StructTag, tagModifier string) (string, bool) {
+	tagValue, ok := p.ParamTagResolver(fieldTag)
+	if !ok {
+		return "", false
+	}
+	return p.resolveTagValueWithModifier(tagValue, tagModifier)
+}
+
+func (p Parser) resolvePath(fieldTag reflect.StructTag) (string, bool) {
+	return p.resolveTagWithModifier(fieldTag, pathTagValuePrefix)
+}
+
+func (p Parser) resolveQuery(fieldTag reflect.StructTag) (string, bool) {
+	return p.resolveTagWithModifier(fieldTag, queryTagValuePrefix)
 }

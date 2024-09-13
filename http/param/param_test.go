@@ -481,7 +481,7 @@ type variousTagsStruct struct {
 
 func TestTagWithModifierTagResolver(t *testing.T) {
 	const correctKey = "key"
-	const correctLocation = "location"
+	const correctPrefix = "location"
 
 	testCases := []struct {
 		fieldName     string
@@ -516,44 +516,11 @@ func TestTagWithModifierTagResolver(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.fieldName, func(t *testing.T) {
-			tagResolver := TagWithModifierTagResolver(correctKey, correctLocation)
+			parser := Parser{ParamTagResolver: TagNameResolver(correctKey)}
 			structField, found := reflect.TypeOf(variousTagsStruct{}).FieldByName(tc.fieldName)
 			require.True(t, found)
 
-			paramName, ok := tagResolver(structField.Tag)
-
-			assert.Equal(t, tc.expectedParam, paramName)
-			assert.Equal(t, tc.expectedOk, ok)
-		})
-	}
-}
-
-func TestFixedTagNameParamTagResolver(t *testing.T) {
-	const correctKey = "key"
-
-	testCases := []struct {
-		fieldName     string
-		expectedParam string
-		expectedOk    bool
-	}{
-		{
-			fieldName:     "A",
-			expectedParam: "location=val",
-			expectedOk:    true,
-		},
-		{
-			fieldName:     "D",
-			expectedParam: "",
-			expectedOk:    false,
-		},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.fieldName, func(t *testing.T) {
-			tagResolver := FixedTagNameParamTagResolver(correctKey)
-			structField, found := reflect.TypeOf(variousTagsStruct{}).FieldByName(tc.fieldName)
-			require.True(t, found)
-
-			paramName, ok := tagResolver(structField.Tag)
+			paramName, ok := parser.resolveTagWithModifier(structField.Tag, correctPrefix)
 
 			assert.Equal(t, tc.expectedParam, paramName)
 			assert.Equal(t, tc.expectedOk, ok)
