@@ -4,6 +4,11 @@ How to release a new version:
 - Manually release new version.
 
 ## [Unreleased]
+### Added
+- package `http/param`: can parse into embedded structs.
+
+### Removed
+- package `http/param`: can no longer change the tag value prefix the parser reacts to (e.g. from `param:"query=q"` to `param:"myPrefix=q"`)
 
 ## [0.7.1] - 2024-07-11
 ### Changed
