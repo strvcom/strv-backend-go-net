@@ -471,6 +471,99 @@ func TestParser_Parse_DoesNotOverwrite(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+type EmbeddedStruct struct {
+	Embedded string `param:"query=embedded"`
+}
+
+type embeddingStruct struct {
+	EmbeddedStruct
+}
+
+type embeddingPtrStruct struct {
+	*EmbeddedStruct
+}
+
+type embeddedStruct struct {
+	Embedded string `param:"query=embedded"`
+}
+
+type embeddingUnexported struct {
+	embeddedStruct
+}
+
+type embeddingUnexportedPtr struct {
+	*embeddedStruct
+}
+
+type embeddingNested struct {
+	embeddingUnexported
+}
+
+func TestParser_Parse_Embedded(t *testing.T) {
+	p := DefaultParser()
+	req := httptest.NewRequest(http.MethodGet, "https://test.com/hello?embedded=input", nil)
+
+	tests := []struct {
+		resultPtr   any
+		expectedPtr any
+	}{
+		{
+			resultPtr: new(embeddingStruct),
+			expectedPtr: &embeddingStruct{
+				EmbeddedStruct{
+					Embedded: "input",
+				},
+			},
+		},
+		{
+			resultPtr: new(embeddingPtrStruct),
+			expectedPtr: &embeddingPtrStruct{
+				EmbeddedStruct: &EmbeddedStruct{
+					Embedded: "input",
+				},
+			},
+		},
+		{
+			resultPtr: new(embeddingUnexported),
+			expectedPtr: &embeddingUnexported{
+				embeddedStruct: embeddedStruct{
+					Embedded: "input",
+				},
+			},
+		},
+		{
+			resultPtr: new(embeddingNested),
+			expectedPtr: &embeddingNested{
+				embeddingUnexported{
+					embeddedStruct{
+						Embedded: "input",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(reflect.TypeOf(tt.resultPtr).Elem().Name(), func(t *testing.T) {
+			err := p.Parse(req, tt.resultPtr)
+
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedPtr, tt.resultPtr)
+		})
+	}
+}
+
+func TestParser_Parse_Embedded_Error(t *testing.T) {
+	p := DefaultParser()
+	req := httptest.NewRequest(http.MethodGet, "https://test.com/hello?embedded=input", nil)
+
+	var result embeddingUnexportedPtr
+	err := p.Parse(req, &result)
+
+	assert.ErrorContains(t, err, "unexported")
+	assert.ErrorContains(t, err, "embeddedStruct")
+}
+
 type variousTagsStruct struct {
 	A string `key:"location=val"`
 	B string `key:"location=val=excessive"`

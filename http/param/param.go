@@ -61,7 +61,8 @@ func (p Parser) WithPathParamFunc(f PathParamFunc) Parser {
 	return p
 }
 
-// Parse accepts the request and a pointer to struct that is tagged with appropriate tags set in Parser.
+// Parse accepts the request and a pointer to struct with its fields tagged with appropriate tags set in Parser.
+// Such tagged fields must be in top level struct, or in exported struct embedded in top-level struct.
 // All such tagged fields are assigned the respective parameter from the actual request.
 //
 // Fields are assigned their zero value if the field was tagged but request did not contain such parameter.
@@ -86,13 +87,21 @@ func (p Parser) Parse(r *http.Request, dest any) error {
 		return fmt.Errorf("can only parse into struct, but got %s", v.Type().Name())
 	}
 
-	for i := 0; i < v.NumField(); i++ {
-		typeField := v.Type().Field(i)
-		if !typeField.IsExported() {
-			continue
+	var fieldIndexPaths []taggedFieldIndexPath
+	p.findTaggedIndexPaths(v.Type(), []int{}, &fieldIndexPaths)
+
+	for i := range fieldIndexPaths {
+		// Zero the value, even if it would not be set by following path or query parameter.
+		// This will cause potential partial result from previous parser (e.g. json.Unmarshal) to be discarded on
+		// fields that are tagged for path or query parameter.
+		err := zeroPath(v, &fieldIndexPaths[i])
+		if err != nil {
+			return err
 		}
-		valueField := v.Field(i)
-		err := p.parseParam(r, typeField, valueField)
+	}
+
+	for _, path := range fieldIndexPaths {
+		err := p.parseParam(r, path)
 		if err != nil {
 			return err
 		}
@@ -100,34 +109,98 @@ func (p Parser) Parse(r *http.Request, dest any) error {
 	return nil
 }
 
-func (p Parser) parseParam(r *http.Request, typeField reflect.StructField, v reflect.Value) error {
-	tag := typeField.Tag
-	pathParamName, okPath := p.resolvePath(tag)
-	queryParamName, okQuery := p.resolveQuery(tag)
-	if !okPath && !okQuery {
-		// do nothing if tagged neither for query nor param
-		return nil
+type paramType int
+
+const (
+	paramTypeQuery = iota
+	paramTypePath
+)
+
+type taggedFieldIndexPath struct {
+	paramType paramType
+	paramName string
+	indexPath []int
+	destValue reflect.Value
+}
+
+func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath []int, resultPaths *[]taggedFieldIndexPath) {
+	for i := 0; i < typ.NumField(); i++ {
+		typeField := typ.Field(i)
+		if typeField.Anonymous {
+			t := typeField.Type
+			if t.Kind() == reflect.Pointer {
+				t = t.Elem()
+			}
+			if t.Kind() == reflect.Struct {
+				p.findTaggedIndexPaths(t, append(currentNestingIndexPath, i), resultPaths)
+			}
+		}
+		if !typeField.IsExported() {
+			continue
+		}
+		tag := typeField.Tag
+		pathParamName, okPath := p.resolvePath(tag)
+		queryParamName, okQuery := p.resolveQuery(tag)
+		if okPath {
+			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
+			newPath = append(newPath, currentNestingIndexPath...)
+			newPath = append(newPath, i)
+			*resultPaths = append(*resultPaths, taggedFieldIndexPath{
+				paramType: paramTypePath,
+				paramName: pathParamName,
+				indexPath: newPath,
+			})
+		}
+		if okQuery {
+			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
+			newPath = append(newPath, currentNestingIndexPath...)
+			newPath = append(newPath, i)
+			*resultPaths = append(*resultPaths, taggedFieldIndexPath{
+				paramType: paramTypeQuery,
+				paramName: queryParamName,
+				indexPath: newPath,
+			})
+		}
 	}
+}
 
-	// Zero the value, even if it would not be set by following path or query parameter.
-	// This will cause potential partial result from previous parser (e.g. json.Unmarshal) to be discarded on
-	// fields that are tagged for path or query parameter.
-	v.Set(reflect.Zero(typeField.Type))
+func zeroPath(v reflect.Value, path *taggedFieldIndexPath) error {
+	for n, i := range path.indexPath {
+		if v.Kind() == reflect.Pointer {
+			v = v.Elem()
+		}
+		if v.Kind() != reflect.Struct {
+			return fmt.Errorf("expected to nest into struct, but got %s", v.Type().Name())
+		}
+		typeField := v.Type().Field(i)
+		v = v.Field(i)
 
-	if okPath {
-		err := p.parsePathParam(r, pathParamName, v)
+		if n == len(path.indexPath)-1 {
+			v.Set(reflect.Zero(typeField.Type))
+			path.destValue = v
+		} else if v.Kind() == reflect.Pointer && v.IsNil() {
+			if !v.CanSet() {
+				return fmt.Errorf("cannot set embedded pointer to unexported struct: %v", v.Type().Elem())
+			}
+			v.Set(reflect.New(v.Type().Elem()))
+		}
+	}
+	return nil
+}
+
+func (p Parser) parseParam(r *http.Request, path taggedFieldIndexPath) error {
+	switch path.paramType {
+	case paramTypePath:
+		err := p.parsePathParam(r, path.paramName, path.destValue)
+		if err != nil {
+			return err
+		}
+	case paramTypeQuery:
+		err := p.parseQueryParam(r, path.paramName, path.destValue)
 		if err != nil {
 			return err
 		}
 	}
-
-	if okQuery {
-		err := p.parseQueryParam(r, queryParamName, v)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
