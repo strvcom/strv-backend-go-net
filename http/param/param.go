@@ -87,8 +87,7 @@ func (p Parser) Parse(r *http.Request, dest any) error {
 		return fmt.Errorf("can only parse into struct, but got %s", v.Type().Name())
 	}
 
-	var fieldIndexPaths []taggedFieldIndexPath
-	p.findTaggedIndexPaths(v.Type(), []int{}, &fieldIndexPaths)
+	fieldIndexPaths := p.findTaggedIndexPaths(v.Type(), []int{}, []taggedFieldIndexPath{})
 
 	for i := range fieldIndexPaths {
 		// Zero the value, even if it would not be set by following path or query parameter.
@@ -112,7 +111,7 @@ func (p Parser) Parse(r *http.Request, dest any) error {
 type paramType int
 
 const (
-	paramTypeQuery = iota
+	paramTypeQuery paramType = iota
 	paramTypePath
 )
 
@@ -123,7 +122,7 @@ type taggedFieldIndexPath struct {
 	destValue reflect.Value
 }
 
-func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath []int, resultPaths *[]taggedFieldIndexPath) {
+func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath []int, paths []taggedFieldIndexPath) []taggedFieldIndexPath {
 	for i := 0; i < typ.NumField(); i++ {
 		typeField := typ.Field(i)
 		if typeField.Anonymous {
@@ -132,7 +131,7 @@ func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath [
 				t = t.Elem()
 			}
 			if t.Kind() == reflect.Struct {
-				p.findTaggedIndexPaths(t, append(currentNestingIndexPath, i), resultPaths)
+				paths = p.findTaggedIndexPaths(t, append(currentNestingIndexPath, i), paths)
 			}
 		}
 		if !typeField.IsExported() {
@@ -145,7 +144,7 @@ func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath [
 			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
 			newPath = append(newPath, currentNestingIndexPath...)
 			newPath = append(newPath, i)
-			*resultPaths = append(*resultPaths, taggedFieldIndexPath{
+			paths = append(paths, taggedFieldIndexPath{
 				paramType: paramTypePath,
 				paramName: pathParamName,
 				indexPath: newPath,
@@ -155,13 +154,14 @@ func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath [
 			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
 			newPath = append(newPath, currentNestingIndexPath...)
 			newPath = append(newPath, i)
-			*resultPaths = append(*resultPaths, taggedFieldIndexPath{
+			paths = append(paths, taggedFieldIndexPath{
 				paramType: paramTypeQuery,
 				paramName: queryParamName,
 				indexPath: newPath,
 			})
 		}
 	}
+	return paths
 }
 
 func zeroPath(v reflect.Value, path *taggedFieldIndexPath) error {
@@ -169,9 +169,8 @@ func zeroPath(v reflect.Value, path *taggedFieldIndexPath) error {
 		if v.Kind() == reflect.Pointer {
 			v = v.Elem()
 		}
-		if v.Kind() != reflect.Struct {
-			return fmt.Errorf("expected to nest into struct, but got %s", v.Type().Name())
-		}
+		// findTaggedIndexPaths prepared a path.indexPath in such a way, that respective field is always
+		// pointer to struct or struct -> should be always able to .Field() here
 		typeField := v.Type().Field(i)
 		v = v.Field(i)
 
