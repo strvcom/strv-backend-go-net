@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"go.strv.io/net/internal"
 )
 
