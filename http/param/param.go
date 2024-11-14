@@ -309,7 +309,7 @@ func unmarshalPrimitiveValue(text string, dest reflect.Value) error {
 // Example: resolveTagValueWithModifier("query=param_name", "query") returns "param_name", true.
 func (p Parser) resolveTagValueWithModifier(tagValue string, tagModifier string) (string, bool) {
 	splits := strings.Split(tagValue, "=")
-	//nolint:gomnd // 2 not really that magic number - one value before '=', one after
+	//nolint:mnd // 2 not really that magic number - one value before '=', one after
 	if len(splits) != 2 {
 		return "", false
 	}

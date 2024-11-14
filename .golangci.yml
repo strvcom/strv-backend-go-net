@@ -24,7 +24,7 @@ linters:
     - goconst
     - gocritic
     - gofmt
-    - gomnd
+    - mnd
     - gosec
     - misspell
     - nilerr
