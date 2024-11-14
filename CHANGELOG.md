@@ -4,6 +4,8 @@ How to release a new version:
 - Manually release new version.
 
 ## [Unreleased]
+
+## [0.8.0] - 2024-11-14
 ### Added
 - package `http/param`: can parse into embedded structs.
 
@@ -85,7 +87,8 @@ How to release a new version:
 ### Added
 - Added Changelog.
 
-[Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/strvcom/strv-backend-go-net/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/strvcom/strv-backend-go-net/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/strvcom/strv-backend-go-net/compare/v0.6.2...v0.7.0
 [0.6.2]: https://github.com/strvcom/strv-backend-go-net/compare/v0.6.1...v0.6.2

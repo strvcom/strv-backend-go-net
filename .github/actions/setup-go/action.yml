@@ -11,16 +11,9 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - id: go-version
-      run: |
-        echo "Go version is set to ${{ inputs.go-version }}"
-        echo "GO_VERSION=${{ inputs.go-version }}" >> $GITHUB_ENV
-      shell: bash
-      name: Setup Go
     - id: go-setup
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version-file: go.mod
         check-latest: true
         cache: ${{ inputs.cache }}
-
