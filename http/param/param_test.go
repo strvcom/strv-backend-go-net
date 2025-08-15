@@ -460,9 +460,7 @@ type structWithFormParams struct {
 
 func TestParser_Parse_FormParam(t *testing.T) {
 	r := chi.NewRouter()
-	p := DefaultParser().WithFormParamFunc(func(r *http.Request, key string) string {
-		return r.FormValue(key)
-	})
+	p := DefaultParser()
 	result := structWithFormParams{
 		Nothing: "should be replaced",
 	}

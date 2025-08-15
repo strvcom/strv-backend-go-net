@@ -36,14 +36,10 @@ func TagNameResolver(tagName string) TagResolver {
 type PathParamFunc func(r *http.Request, key string) string
 
 // FormParamFunc is a function that returns value of specified form parameter.
-type FormParamFunc func(r *http.Request, key string) []string
+type FormParamFunc func(r *http.Request, key string) string
 
-func DefaultFormParamFunc(r *http.Request, key string) []string {
-	// ParseForm is called in Parser.Parse, so we can safely assume that r.Form is already populated.
-	if values, ok := r.PostForm[key]; ok && len(values) > 0 {
-		return values
-	}
-	return nil
+func DefaultFormParamFunc(r *http.Request, key string) string {
+	return r.PostFormValue(key)
 }
 
 // Parser can Parse query and path parameters from http.Request into a struct.
@@ -255,9 +251,9 @@ func (p Parser) parseFormParam(r *http.Request, paramName string, v reflect.Valu
 	if err := r.ParseForm(); err != nil {
 		return fmt.Errorf("parsing form data: %w", err)
 	}
-	paramValues := p.FormParamFunc(r, paramName)
-	if len(paramValues) > 0 {
-		err := unmarshalValueOrSlice(paramValues, v)
+	paramValue := p.FormParamFunc(r, paramName)
+	if paramValue != "" {
+		err := unmarshalValue(paramValue, v)
 		if err != nil {
 			return fmt.Errorf("unmarshaling form parameter %s: %w", paramName, err)
 		}
