@@ -13,6 +13,7 @@ const (
 	defaultTagName      = "param"
 	queryTagValuePrefix = "query"
 	pathTagValuePrefix  = "path"
+	formTagValuePrefix  = "form"
 )
 
 // TagResolver is a function that decides from a field tag what parameter should be searched.
@@ -34,6 +35,9 @@ func TagNameResolver(tagName string) TagResolver {
 // PathParamFunc is a function that returns value of specified http path parameter.
 type PathParamFunc func(r *http.Request, key string) string
 
+// FormParamFunc is a function that returns value of specified form parameter.
+type FormParamFunc func(r *http.Request, key string) string
+
 // Parser can Parse query and path parameters from http.Request into a struct.
 // Fields struct have to be tagged such that either QueryParamTagResolver or PathParamTagResolver returns
 // valid parameter name from the provided tag.
@@ -43,6 +47,7 @@ type PathParamFunc func(r *http.Request, key string) string
 type Parser struct {
 	ParamTagResolver TagResolver
 	PathParamFunc    PathParamFunc
+	FormParamFunc    FormParamFunc
 }
 
 // DefaultParser returns query and path parameter Parser with intended struct tags
@@ -51,6 +56,7 @@ func DefaultParser() Parser {
 	return Parser{
 		ParamTagResolver: TagNameResolver(defaultTagName),
 		PathParamFunc:    nil, // keep nil, as there is no sensible default of how to get value of path parameter
+		FormParamFunc:    nil, // keep nil, as there is no sensible default of how to get value of form parameter
 	}
 }
 
@@ -58,6 +64,13 @@ func DefaultParser() Parser {
 // For more see Parser description.
 func (p Parser) WithPathParamFunc(f PathParamFunc) Parser {
 	p.PathParamFunc = f
+	return p
+}
+
+// WithFormParamFunc returns a copy of Parser with set function for getting form parameters from http.Request.
+// For more see Parser description.
+func (p Parser) WithFormParamFunc(f FormParamFunc) Parser {
+	p.FormParamFunc = f
 	return p
 }
 
@@ -113,6 +126,7 @@ type paramType int
 const (
 	paramTypeQuery paramType = iota
 	paramTypePath
+	paramTypeForm
 )
 
 type taggedFieldIndexPath struct {
@@ -139,6 +153,7 @@ func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath [
 		}
 		tag := typeField.Tag
 		pathParamName, okPath := p.resolvePath(tag)
+		formParamName, okForm := p.resolveForm(tag)
 		queryParamName, okQuery := p.resolveQuery(tag)
 		if okPath {
 			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
@@ -147,6 +162,16 @@ func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath [
 			paths = append(paths, taggedFieldIndexPath{
 				paramType: paramTypePath,
 				paramName: pathParamName,
+				indexPath: newPath,
+			})
+		}
+		if okForm {
+			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
+			newPath = append(newPath, currentNestingIndexPath...)
+			newPath = append(newPath, i)
+			paths = append(paths, taggedFieldIndexPath{
+				paramType: paramTypeForm,
+				paramName: formParamName,
 				indexPath: newPath,
 			})
 		}
@@ -194,6 +219,11 @@ func (p Parser) parseParam(r *http.Request, path taggedFieldIndexPath) error {
 		if err != nil {
 			return err
 		}
+	case paramTypeForm:
+		err := p.parseFormParam(r, path.paramName, path.destValue)
+		if err != nil {
+			return err
+		}
 	case paramTypeQuery:
 		err := p.parseQueryParam(r, path.paramName, path.destValue)
 		if err != nil {
@@ -212,6 +242,22 @@ func (p Parser) parsePathParam(r *http.Request, paramName string, v reflect.Valu
 		err := unmarshalValue(paramValue, v)
 		if err != nil {
 			return fmt.Errorf("unmarshaling path parameter %s: %w", paramName, err)
+		}
+	}
+	return nil
+}
+
+func (p Parser) parseFormParam(r *http.Request, paramName string, v reflect.Value) error {
+	if r.Method != http.MethodPost && r.Method != http.MethodPut && r.Method != http.MethodPatch {
+		return fmt.Errorf("struct's field was tagged for parsing the form parameter (%s) but request method is not POST, PUT or PATCH", paramName)
+	}
+	if err := r.ParseForm(); err != nil {
+		return fmt.Errorf("parsing form data: %w", err)
+	}
+	if values, ok := r.Form[paramName]; ok && len(values) > 0 {
+		err := unmarshalValueOrSlice(values, v)
+		if err != nil {
+			return fmt.Errorf("unmarshaling form parameter %s: %w", paramName, err)
 		}
 	}
 	return nil
@@ -329,6 +375,10 @@ func (p Parser) resolveTagWithModifier(fieldTag reflect.StructTag, tagModifier s
 
 func (p Parser) resolvePath(fieldTag reflect.StructTag) (string, bool) {
 	return p.resolveTagWithModifier(fieldTag, pathTagValuePrefix)
+}
+
+func (p Parser) resolveForm(fieldTag reflect.StructTag) (string, bool) {
+	return p.resolveTagWithModifier(fieldTag, formTagValuePrefix)
 }
 
 func (p Parser) resolveQuery(fieldTag reflect.StructTag) (string, bool) {

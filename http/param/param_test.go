@@ -451,6 +451,45 @@ func TestParser_Parse_PathParam_FuncNotDefinedError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+type structWithFormParams struct {
+	Subject string            `param:"form=subject"`
+	Amount  *int              `param:"form=amount"`
+	Object  *maybeShinyObject `param:"form=object"`
+	Nothing string            `param:"form=nothing"`
+}
+
+func TestParser_Parse_FormParam(t *testing.T) {
+	r := chi.NewRouter()
+	p := DefaultParser().WithFormParamFunc(func(r *http.Request, key string) string {
+		return r.FormValue(key)
+	})
+	result := structWithFormParams{
+		Nothing: "should be replaced",
+	}
+	expected := structWithFormParams{
+		Subject: "world",
+		Amount:  ptr(69),
+		Object: &maybeShinyObject{
+			IsShiny: true,
+			Object:  "apples",
+		},
+		Nothing: "",
+	}
+	var parseError error
+	r.Post("/hello/objects", func(w http.ResponseWriter, r *http.Request) {
+		parseError = p.Parse(r, &result)
+	})
+
+	urlEncodedBodyContent := "subject=world&amount=69&object=shiny-apples&nothing="
+	urlEncodedBody := strings.NewReader(urlEncodedBodyContent)
+	req := httptest.NewRequest(http.MethodPost, "https://test.com/hello/objects", urlEncodedBody)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.ServeHTTP(httptest.NewRecorder(), req)
+
+	assert.NoError(t, parseError)
+	assert.Equal(t, expected, result)
+}
+
 type otherFieldsStruct struct {
 	Q     string `param:"query=q"`
 	Other string `json:"other"`

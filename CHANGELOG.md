@@ -5,6 +5,9 @@ How to release a new version:
 
 ## [Unreleased]
 
+### Added
+- package `http/param`: can parse form data into embedded structs.
+
 ## [0.8.0] - 2024-11-14
 ### Added
 - package `http/param`: can parse into embedded structs.
