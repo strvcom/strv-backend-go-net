@@ -36,7 +36,15 @@ func TagNameResolver(tagName string) TagResolver {
 type PathParamFunc func(r *http.Request, key string) string
 
 // FormParamFunc is a function that returns value of specified form parameter.
-type FormParamFunc func(r *http.Request, key string) string
+type FormParamFunc func(r *http.Request, key string) []string
+
+func DefaultFormParamFunc(r *http.Request, key string) []string {
+	// ParseForm is called in Parser.Parse, so we can safely assume that r.Form is already populated.
+	if values, ok := r.PostForm[key]; ok && len(values) > 0 {
+		return values
+	}
+	return nil
+}
 
 // Parser can Parse query and path parameters from http.Request into a struct.
 // Fields struct have to be tagged such that either QueryParamTagResolver or PathParamTagResolver returns
@@ -56,7 +64,7 @@ func DefaultParser() Parser {
 	return Parser{
 		ParamTagResolver: TagNameResolver(defaultTagName),
 		PathParamFunc:    nil, // keep nil, as there is no sensible default of how to get value of path parameter
-		FormParamFunc:    nil, // keep nil, as there is no sensible default of how to get value of form parameter
+		FormParamFunc:    DefaultFormParamFunc,
 	}
 }
 
@@ -155,10 +163,9 @@ func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath [
 		pathParamName, okPath := p.resolvePath(tag)
 		formParamName, okForm := p.resolveForm(tag)
 		queryParamName, okQuery := p.resolveQuery(tag)
+
+		newPath := append(append([]int{}, currentNestingIndexPath...), i)
 		if okPath {
-			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
-			newPath = append(newPath, currentNestingIndexPath...)
-			newPath = append(newPath, i)
 			paths = append(paths, taggedFieldIndexPath{
 				paramType: paramTypePath,
 				paramName: pathParamName,
@@ -166,9 +173,6 @@ func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath [
 			})
 		}
 		if okForm {
-			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
-			newPath = append(newPath, currentNestingIndexPath...)
-			newPath = append(newPath, i)
 			paths = append(paths, taggedFieldIndexPath{
 				paramType: paramTypeForm,
 				paramName: formParamName,
@@ -176,9 +180,6 @@ func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath [
 			})
 		}
 		if okQuery {
-			newPath := make([]int, 0, len(currentNestingIndexPath)+1)
-			newPath = append(newPath, currentNestingIndexPath...)
-			newPath = append(newPath, i)
 			paths = append(paths, taggedFieldIndexPath{
 				paramType: paramTypeQuery,
 				paramName: queryParamName,
@@ -254,8 +255,9 @@ func (p Parser) parseFormParam(r *http.Request, paramName string, v reflect.Valu
 	if err := r.ParseForm(); err != nil {
 		return fmt.Errorf("parsing form data: %w", err)
 	}
-	if values, ok := r.Form[paramName]; ok && len(values) > 0 {
-		err := unmarshalValueOrSlice(values, v)
+	paramValues := p.FormParamFunc(r, paramName)
+	if len(paramValues) > 0 {
+		err := unmarshalValueOrSlice(paramValues, v)
 		if err != nil {
 			return fmt.Errorf("unmarshaling form parameter %s: %w", paramName, err)
 		}
