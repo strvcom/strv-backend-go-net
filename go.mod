@@ -1,18 +1,18 @@
 module go.strv.io/net
 
-go 1.23.3
+go 1.23.0
 
 require (
-	github.com/99designs/gqlgen v0.17.56
-	github.com/go-chi/chi/v5 v5.1.0
+	github.com/99designs/gqlgen v0.17.78
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/google/uuid v1.6.0
-	github.com/stretchr/testify v1.9.0
-	github.com/vektah/gqlparser/v2 v2.5.19
-	go.strv.io/time v0.2.1
+	github.com/stretchr/testify v1.10.0
+	github.com/vektah/gqlparser/v2 v2.5.30
+	go.strv.io/time v0.2.2
 )
 
 require (
-	github.com/agnivade/levenshtein v1.1.1 // indirect
+	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
