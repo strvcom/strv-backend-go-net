@@ -2,6 +2,8 @@ module go.strv.io/net
 
 go 1.23.0
 
+toolchain go1.25.0
+
 require (
 	github.com/99designs/gqlgen v0.17.78
 	github.com/go-chi/chi/v5 v5.2.2

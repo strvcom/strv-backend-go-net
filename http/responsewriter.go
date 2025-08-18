@@ -2,6 +2,7 @@ package http
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"log/slog"
 	"net"
@@ -40,7 +41,7 @@ func (r *ResponseWriter) WriteHeader(statusCode int) {
 	r.logger.With(
 		slog.Int("current_status_code", r.statusCode),
 		slog.Int("ignored_status_code", statusCode),
-	).Warn("WriteHeader multiple call")
+	).WarnContext(context.TODO(), "WriteHeader multiple call")
 }
 
 func (r *ResponseWriter) ErrorObject() error {
@@ -55,8 +56,8 @@ func (r *ResponseWriter) PanicObject() any {
 	return r.panic
 }
 
-func (r *ResponseWriter) SetPanicObject(panic any) {
-	r.panic = panic
+func (r *ResponseWriter) SetPanicObject(p any) {
+	r.panic = p
 }
 
 func (r *ResponseWriter) TryWriteHeader(statusCode int) bool {

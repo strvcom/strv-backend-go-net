@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWriteResponse(t *testing.T) {
@@ -33,8 +34,8 @@ func TestWriteResponse(t *testing.T) {
 				contentType := defaultResponseOptions().ContentType
 				charsetType := defaultResponseOptions().CharsetType
 
-				assert.Equal(t, args.w.Code, http.StatusNoContent)
-				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
+				assert.Equal(t, http.StatusNoContent, args.w.Code)
+				assert.Equal(t, bytes.NewBuffer(nil), args.w.Body)
 				assert.Equal(
 					t,
 					args.w.Header().Get(Header.ContentType),
@@ -55,8 +56,8 @@ func TestWriteResponse(t *testing.T) {
 				contentType := ImageGIF
 				charsetType := defaultResponseOptions().CharsetType
 
-				assert.Equal(t, args.w.Code, http.StatusNoContent)
-				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
+				assert.Equal(t, http.StatusNoContent, args.w.Code)
+				assert.Equal(t, bytes.NewBuffer(nil), args.w.Body)
 				assert.Equal(
 					t,
 					args.w.Header().Get(Header.ContentType),
@@ -80,8 +81,8 @@ func TestWriteResponse(t *testing.T) {
 				contentType := ImageGIF
 				charsetType := CharsetType("custom")
 
-				assert.Equal(t, args.w.Code, http.StatusNoContent)
-				assert.Equal(t, args.w.Body, bytes.NewBuffer(nil))
+				assert.Equal(t, http.StatusNoContent, args.w.Code)
+				assert.Equal(t, bytes.NewBuffer(nil), args.w.Body)
 				assert.Equal(
 					t,
 					args.w.Header().Get(Header.ContentType),
@@ -92,7 +93,7 @@ func TestWriteResponse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.NoError(t, WriteResponse(tt.args.w, tt.args.data, tt.args.code, tt.args.opts...))
+			require.NoError(t, WriteResponse(tt.args.w, tt.args.data, tt.args.code, tt.args.opts...))
 			tt.testFn(t, tt.args)
 		})
 	}
@@ -117,13 +118,13 @@ func TestWriteErrorResponse(t *testing.T) {
 			},
 			testFn: func(t *testing.T, args args) {
 				t.Helper()
-				assert.Equal(t, args.w.Code, http.StatusInternalServerError)
+				assert.Equal(t, http.StatusInternalServerError, args.w.Code)
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.NoError(t, WriteErrorResponse(tt.args.w, tt.args.code, tt.args.opts...))
+			require.NoError(t, WriteErrorResponse(tt.args.w, tt.args.code, tt.args.opts...))
 			tt.testFn(t, tt.args)
 		})
 	}

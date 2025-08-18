@@ -119,9 +119,9 @@ func LoggingMiddleware(l *slog.Logger) func(http.Handler) http.Handler {
 			}
 
 			if statusCode >= http.StatusInternalServerError {
-				withRequestData(l, rw, ld).Error("request processed")
+				withRequestData(l, rw, ld).ErrorContext(r.Context(), "request processed")
 			} else {
-				withRequestData(l, rw, ld).Info("request processed")
+				withRequestData(l, rw, ld).InfoContext(r.Context(), "request processed")
 			}
 		})
 	}

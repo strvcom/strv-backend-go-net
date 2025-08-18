@@ -10,11 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	httpparam "go.strv.io/net/http/param"
-	"go.strv.io/net/http/signature"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	httpparam "go.strv.io/net/http/param"
+	"go.strv.io/net/http/signature"
 )
 
 type User struct {
@@ -42,7 +43,7 @@ func hasStructJSONTag(obj any) bool {
 		return false
 	}
 	t := v.Type()
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		_, exists := t.Field(i).Tag.Lookup("json")
 		if exists {
 			return true
@@ -289,9 +290,9 @@ func TestWrapper_Error(t *testing.T) {
 			tc.handler.ServeHTTP(rec, req)
 
 			assert.Equal(t, tc.expectedStatus, rec.Code)
-			assert.ErrorIs(t, interceptedError, tc.targetErr)
+			require.ErrorIs(t, interceptedError, tc.targetErr)
 			if tc.isABug {
-				assert.ErrorIs(t, interceptedError, errBug)
+				require.ErrorIs(t, interceptedError, errBug)
 			}
 			assert.JSONEq(t, `{"errorCode":"ERR_UNKNOWN"}`, rec.Body.String())
 		})

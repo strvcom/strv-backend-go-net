@@ -15,6 +15,17 @@ import (
 	"go.strv.io/net/internal"
 )
 
+type Server struct {
+	logger *slog.Logger
+	server *http.Server
+
+	signalsListener chan os.Signal
+	shutdownTimeout *time.Duration
+	waitForShutdown chan struct{}
+
+	doBeforeShutdown []ServerHookFunc
+}
+
 func NewServer(config *ServerConfig) *Server {
 	if config.Limits == nil {
 		config.Limits = &Limits{}
@@ -53,17 +64,6 @@ func NewServer(config *ServerConfig) *Server {
 	return s
 }
 
-type Server struct {
-	logger *slog.Logger
-	server *http.Server
-
-	signalsListener chan os.Signal
-	shutdownTimeout *time.Duration
-	waitForShutdown chan struct{}
-
-	doBeforeShutdown []ServerHookFunc
-}
-
 // Run calls ListenAndServe but returns error only if err != http.ErrServerClosed.
 // Server is shutdown when passed context is canceled, or when SIGTERM is received.
 func (s *Server) Run(ctx context.Context) error {
@@ -71,34 +71,34 @@ func (s *Server) Run(ctx context.Context) error {
 	go func() {
 		errCh <- s.server.ListenAndServe()
 	}()
-	s.logger.Info("server started")
+	s.logger.InfoContext(ctx, "server started")
 
 	signal.Notify(s.signalsListener, syscall.SIGINT, syscall.SIGTERM)
 
 	select {
 	case err := <-errCh:
 		if errors.Is(err, http.ErrServerClosed) {
-			s.logger.Debug("server stopped: server closed")
+			s.logger.DebugContext(ctx, "server stopped: server closed")
 		} else {
-			s.logger.Error("server stopped: error received", slog.Any("error", err))
+			s.logger.ErrorContext(ctx, "server stopped: error received", slog.Any("error", err))
 		}
 	case <-ctx.Done():
-		s.logger.Info("server stopped: context closed", slog.Any("error", ctx.Err()))
+		s.logger.InfoContext(ctx, "server stopped: context closed", slog.Any("error", ctx.Err()))
 	case sig := <-s.signalsListener:
 		s.logger.With(
 			slog.Any("signal", sig),
-		).Info("server stopped: signal received", slog.Any("error", neterrors.ErrServerInterrupted))
+		).InfoContext(ctx, "server stopped: signal received", slog.Any("error", neterrors.ErrServerInterrupted))
 	}
 
 	s.logger.With(
 		slog.Duration("timeout", *s.shutdownTimeout),
-	).Debug("waiting for server shutdown...")
+	).DebugContext(ctx, "waiting for server shutdown...")
 
 	if err := s.server.Shutdown(context.Background()); err != nil {
-		s.logger.Error("server shutdown", slog.Any("error", err))
+		s.logger.ErrorContext(ctx, "server shutdown", slog.Any("error", err))
 		return err
 	}
-	defer s.logger.Debug("server shutdown complete")
+	defer s.logger.DebugContext(ctx, "server shutdown complete")
 
 	select {
 	case <-s.waitForShutdown:
