@@ -123,7 +123,7 @@ type taggedFieldIndexPath struct {
 }
 
 func (p Parser) findTaggedIndexPaths(typ reflect.Type, currentNestingIndexPath []int, paths []taggedFieldIndexPath) []taggedFieldIndexPath {
-	for i := 0; i < typ.NumField(); i++ {
+	for i := range typ.NumField() {
 		typeField := typ.Field(i)
 		if typeField.Anonymous {
 			t := typeField.Type

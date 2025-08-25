@@ -1,87 +1,153 @@
+version: "2"
+run:
+  timeout: 3m
 linters:
-  # Disable all linters.
-  # Default: false
-  disable-all: true
-  # Enable specific linter
-  # https://golangci-lint.run/usage/linters/#enabled-by-default-linters
   enable:
-    # default linters
-    - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - typecheck
-    - unused
-    # extra linters
+    - asasalint
+    - asciicheck
     - bidichk
     - bodyclose
+    - canonicalheader
+    - copyloopvar
+    - dogsled
+    - dupl
     - durationcheck
+    - errcheck
     - errname
     - errorlint
     - exhaustive
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - funcorder
+    - funlen
+    - gocheckcompilerdirectives
+    - gochecksumtype
     - gocognit
     - goconst
     - gocritic
-    - gofmt
-    - mnd
+    - gocyclo
+    - gomoddirectives
+    - goprintffuncname
     - gosec
+    - gosmopolitan
+    - govet
+    - iface
+    - ineffassign
+    - importas
+    - inamedparam
+    - intrange
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
     - misspell
+    - mnd
+    - musttag
+    - nakedret
+    - nestif
     - nilerr
-    - revive
+    - nilnesserr
+    - noctx
+    - nolintlint
+    - nosprintfhostport
+    - perfsprint
     - prealloc
-    - stylecheck
-    - tenv
+    - predeclared
+    - reassign
+    - revive
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - testableexamples
+    - testifylint
     - thelper
     - tparallel
     - unconvert
     - unparam
+    - unused
     - usestdlibvars
+    - usetesting
     - wastedassign
     - whitespace
-
-linters-settings:
-  gomnd:
-    ignored-functions:
-      - 'strconv.Parse*'
-      - 'strconv.Format*'
-      - 'strings.SplitN'
-  goconst:
-    ignore-tests: true
-  gocognit:
-    min-complexity: 20
-  revive:
+    # disabled
+    #- containedctx
+    #- contextcheck
+    #- decorder
+    #- depguard
+    #- dupword
+    #- err113
+    #- errchkjson
+    #- exhaustruct
+    #- forcetypeassert
+    #- ginkgolinter
+    #- gochecknoglobals
+    #- gochecknoinits
+    #- godot
+    #- godox
+    #- goheader
+    #- gomodguard
+    #- grouper
+    #- interfacebloat
+    #- ireturn
+    #- lll
+    #- nilnil
+    #- nlreturn
+    #- nonamedreturns
+    #- paralleltest
+    #- promlinter
+    #- protogetter
+    #- recvcheck
+    #- tagalign
+    #- tagliatelle
+    #- testpackage
+    #- varnamelen
+    #- wrapcheck
+    #- wsl
+    #- zerologlint
+  settings:
+    gocognit:
+      min-complexity: 20
+    gocyclo:
+      min-complexity: 20
+    inamedparam:
+      skip-single-param: true
+    mnd:
+      ignored-functions:
+        - os.Chmod
+        - os.Mkdir.*
+        - os.OpenFile
+        - os.WriteFile
+        - strconv.Parse*
+        - strconv.Format*
+        - strings.SplitN
+    nakedret:
+      max-func-lines: 0
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
     rules:
-      - name: atomic
-        severity: warning
-        disabled: false
-      - name: context-keys-type
-        severity: warning
-        disabled: false
-      - name: defer
-        severity: warning
-        disabled: false
-      - name: early-return
-        severity: warning
-        disabled: false
-      - name: indent-error-flow
-        severity: warning
-        disabled: false
-      - name: range-val-in-closure
-        severity: warning
-        disabled: false
-      - name: range-val-address
-        severity: warning
-        disabled: false
-      - name: string-of-int
-        severity: warning
-        disabled: false
-      - name: superfluous-else
-        severity: warning
-        disabled: false
-      - name: time-equal
-        severity: warning
-        disabled: false
-      - name: unhandled-error
-        severity: warning
-        disabled: false
+      # Unit tests.
+      - path: (.+)_test\.go
+        linters:
+          - gosec
+          - funlen
+formatters:
+  enable:
+    - gci
+    - gofmt
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(go.strv.io)
+      custom-order: true
+  exclusions:
+    generated: lax

@@ -11,9 +11,13 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Get Go version
+      id: go-version
+      shell: bash
+      run: echo "go-version=$(sed -ne '/^toolchain /s/^toolchain go//p' go.mod)" >> $GITHUB_OUTPUT
     - id: go-setup
       uses: actions/setup-go@v5
       with:
-        go-version-file: go.mod
+        go-version: ${{ steps.go-version.outputs.go-version }}
         check-latest: true
         cache: ${{ inputs.cache }}

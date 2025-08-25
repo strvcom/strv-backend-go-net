@@ -66,7 +66,6 @@ func TestNewServer(t *testing.T) {
 				config: &ServerConfig{},
 			},
 			want: func() *Server {
-				//nolint:gosec
 				s := &Server{
 					logger:           internal.NewNopLogger(),
 					server:           &http.Server{},
@@ -115,7 +114,6 @@ func TestServer_Start(t *testing.T) {
 				args.ctx.Cancel()
 			},
 			fields: &fields{
-				//nolint:gosec
 				server:           &http.Server{},
 				signalsListener:  make(chan os.Signal, 1),
 				waitForShutdown:  make(chan struct{}, 1),
@@ -132,7 +130,6 @@ func TestServer_Start(t *testing.T) {
 				fields.signalsListener <- syscall.SIGKILL
 			},
 			fields: &fields{
-				//nolint:gosec
 				server:           &http.Server{},
 				signalsListener:  make(chan os.Signal, 1),
 				waitForShutdown:  make(chan struct{}, 1),
@@ -149,7 +146,6 @@ func TestServer_Start(t *testing.T) {
 				fields.signalsListener <- syscall.SIGKILL
 			},
 			fields: &fields{
-				//nolint:gosec
 				server:          &http.Server{},
 				signalsListener: make(chan os.Signal, 1),
 				waitForShutdown: make(chan struct{}, 1),

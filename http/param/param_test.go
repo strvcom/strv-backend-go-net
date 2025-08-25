@@ -79,7 +79,7 @@ func TestParser_Parse_QueryParam_Slice(t *testing.T) {
 			}
 			req := httptest.NewRequest(http.MethodGet, tc.query, nil)
 			err := parser.Parse(req, &result)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
@@ -100,7 +100,7 @@ type structWithPrimitiveTypes struct {
 	Float32 float32 `param:"query=f1"`
 	Float64 float64 `param:"query=f2"`
 	String  string  `param:"query=s"`
-	// nolint:unused
+	//nolint:unused
 	ignoredUnexported string `param:"query=ignored"`
 }
 
@@ -128,8 +128,8 @@ func TestParser_Parse_QueryParam_PrimitiveTypes(t *testing.T) {
 	result := structWithPrimitiveTypes{}
 	req := httptest.NewRequest(http.MethodGet, query, nil)
 	err := parser.Parse(req, &result)
-	assert.NoError(t, err)
-	assert.Equal(t, expected, result)
+	require.NoError(t, err)
+	require.Equal(t, expected, result)
 }
 
 type structWithPointers struct {
@@ -176,7 +176,7 @@ func TestParser_Parse_QueryParam_Pointers(t *testing.T) {
 			result := structWithPointers{}
 			req := httptest.NewRequest(http.MethodGet, tc.query, nil)
 			err := parser.Parse(req, &result)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
@@ -204,7 +204,7 @@ func TestParser_Parse_QueryParam_ValueReceiverUnmarshaler(t *testing.T) {
 	}
 	req := httptest.NewRequest(http.MethodGet, query, nil)
 	err := parser.Parse(req, &theStruct)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "changed", valueReceiverResult)
 }
 
@@ -413,14 +413,14 @@ func TestParser_Parse_PathParam(t *testing.T) {
 		Nothing: "",
 	}
 	var parseError error
-	r.Get("/hello/{subject}/i/have/{amount}/{object}", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/hello/{subject}/i/have/{amount}/{object}", func(_ http.ResponseWriter, r *http.Request) {
 		parseError = p.Parse(r, &result)
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "https://test.com/hello/world/i/have/69/shiny-apples", nil)
 	r.ServeHTTP(httptest.NewRecorder(), req)
 
-	assert.NoError(t, parseError)
+	require.NoError(t, parseError)
 	assert.Equal(t, expected, result)
 }
 
@@ -432,7 +432,7 @@ func TestParser_Parse_PathParam_ParseError(t *testing.T) {
 	r := chi.NewRouter()
 	p := DefaultParser().WithPathParamFunc(chi.URLParam)
 	var parseError error
-	r.Get("/hello/{param}", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/hello/{param}", func(_ http.ResponseWriter, r *http.Request) {
 		parseError = p.Parse(r, &simpleStringPathParamStruct{})
 	})
 
@@ -467,7 +467,7 @@ func TestParser_Parse_DoesNotOverwrite(t *testing.T) {
 	result := otherFieldsStruct{Other: "already filled"}
 	err := p.Parse(req, &result)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expected, result)
 }
 
@@ -547,7 +547,7 @@ func TestParser_Parse_Embedded(t *testing.T) {
 		t.Run(reflect.TypeOf(tt.resultPtr).Elem().Name(), func(t *testing.T) {
 			err := p.Parse(req, tt.resultPtr)
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.expectedPtr, tt.resultPtr)
 		})
 	}
@@ -560,8 +560,8 @@ func TestParser_Parse_Embedded_Error(t *testing.T) {
 	var result embeddingUnexportedPtr
 	err := p.Parse(req, &result)
 
-	assert.ErrorContains(t, err, "unexported")
-	assert.ErrorContains(t, err, "embeddedStruct")
+	require.ErrorContains(t, err, "unexported")
+	require.ErrorContains(t, err, "embeddedStruct")
 }
 
 type variousTagsStruct struct {

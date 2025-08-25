@@ -70,7 +70,7 @@ func checkRecursionLimitByTypeAndField(rCtx recursionContext, typeName string, s
 		if err != nil {
 			return err
 		}
-		rCtx.typeAndFieldCount[nesting] -= 1
+		rCtx.typeAndFieldCount[nesting]--
 	}
 
 	return nil

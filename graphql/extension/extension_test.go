@@ -80,12 +80,12 @@ func (e executableSchema) Schema() *ast.Schema {
 	return parsedSchema
 }
 
-func (e executableSchema) Complexity(_, _ string, _ int, _ map[string]interface{}) (int, bool) {
+func (e executableSchema) Complexity(_ context.Context, _, _ string, _ int, _ map[string]any) (int, bool) {
 	return 0, false
 }
 
 func (e executableSchema) Exec(_ context.Context) graphql.ResponseHandler {
-	return func(ctx context.Context) *graphql.Response {
+	return func(_ context.Context) *graphql.Response {
 		return &graphql.Response{}
 	}
 }
