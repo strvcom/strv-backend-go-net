@@ -2,6 +2,7 @@ package param
 
 import (
 	"encoding"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -11,6 +12,7 @@ import (
 
 const (
 	defaultTagName      = "param"
+	defaultMaxMemory    = 32 << 20 // 32 MB
 	queryTagValuePrefix = "query"
 	pathTagValuePrefix  = "path"
 	formTagValuePrefix  = "form"
@@ -248,8 +250,14 @@ func (p Parser) parseFormParam(r *http.Request, paramName string, v reflect.Valu
 	if r.Method != http.MethodPost && r.Method != http.MethodPut && r.Method != http.MethodPatch {
 		return fmt.Errorf("struct's field was tagged for parsing the form parameter (%s) but request method is not POST, PUT or PATCH", paramName)
 	}
-	if err := r.ParseForm(); err != nil {
-		return fmt.Errorf("parsing form data: %w", err)
+	if err := r.ParseMultipartForm(defaultMaxMemory); err != nil {
+		if !errors.Is(err, http.ErrNotMultipart) {
+			return fmt.Errorf("parsing multipart form: %w", err)
+		}
+		// Try to parse regular form if not multipart form.
+		if err := r.ParseForm(); err != nil {
+			return fmt.Errorf("parsing form: %w", err)
+		}
 	}
 	paramValue := p.FormParamFunc(r, paramName)
 	if paramValue != "" {

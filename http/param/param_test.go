@@ -488,6 +488,35 @@ func TestParser_Parse_FormParam(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
+func TestParser_Parse_FormParam_NoParams(t *testing.T) {
+	p := DefaultParser()
+	result := structWithFormParams{
+		Subject: "should be replaced",
+		Amount:  ptr(123), // should be zeroed out
+		Nothing: "should be replaced",
+	}
+	expected := structWithFormParams{
+		Subject: "",
+		Amount:  nil,
+		Object:  nil,
+		Nothing: "",
+	}
+	var parseError error
+
+	r := chi.NewRouter()
+	r.Post("/hello/objects", func(w http.ResponseWriter, r *http.Request) {
+		parseError = p.Parse(r, &result)
+	})
+
+	// Empty form body
+	req := httptest.NewRequest(http.MethodPost, "https://test.com/hello/objects", strings.NewReader(""))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	r.ServeHTTP(httptest.NewRecorder(), req)
+
+	assert.NoError(t, parseError)
+	assert.Equal(t, expected, result)
+}
+
 type otherFieldsStruct struct {
 	Q     string `param:"query=q"`
 	Other string `json:"other"`
