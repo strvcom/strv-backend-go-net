@@ -474,7 +474,7 @@ func TestParser_Parse_FormParam(t *testing.T) {
 		Nothing: "",
 	}
 	var parseError error
-	r.Post("/hello/objects", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/hello/objects", func(_ http.ResponseWriter, r *http.Request) {
 		parseError = p.Parse(r, &result)
 	})
 
@@ -484,7 +484,7 @@ func TestParser_Parse_FormParam(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(httptest.NewRecorder(), req)
 
-	assert.NoError(t, parseError)
+	require.NoError(t, parseError)
 	assert.Equal(t, expected, result)
 }
 
@@ -504,7 +504,7 @@ func TestParser_Parse_FormParam_NoParams(t *testing.T) {
 	var parseError error
 
 	r := chi.NewRouter()
-	r.Post("/hello/objects", func(w http.ResponseWriter, r *http.Request) {
+	r.Post("/hello/objects", func(_ http.ResponseWriter, r *http.Request) {
 		parseError = p.Parse(r, &result)
 	})
 
@@ -513,7 +513,7 @@ func TestParser_Parse_FormParam_NoParams(t *testing.T) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.ServeHTTP(httptest.NewRecorder(), req)
 
-	assert.NoError(t, parseError)
+	require.NoError(t, parseError)
 	assert.Equal(t, expected, result)
 }
 
