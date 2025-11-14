@@ -12,5 +12,5 @@ In this example, using chi to access path parameters that has a `{id}` wildcard 
 
 ```
 	parsedInput := MyInputStruct{}
-	param.DefaultParser().PathParamFunc(chi.URLParam).Parse(request, &parsedInput)
+	param.DefaultParser().WithPathParamFunc(chi.URLParam).Parse(request, &parsedInput)
 ```
