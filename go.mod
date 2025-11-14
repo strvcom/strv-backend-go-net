@@ -2,7 +2,7 @@ module go.strv.io/net
 
 go 1.23.0
 
-toolchain go1.25.0
+toolchain go1.25.4
 
 require (
 	github.com/99designs/gqlgen v0.17.78
