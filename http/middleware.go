@@ -16,13 +16,14 @@ const (
 // RequestIDFunc is used for obtaining a request ID from the HTTP header.
 type RequestIDFunc func(h http.Header) string
 
-// RequestIDMiddleware saves request ID into the request context.
+// RequestIDMiddleware saves request ID into the request context and response header.
 // If context already contains request ID, next handler is called.
 // If the user provided function returns empty request ID, a new one is generated.
 func RequestIDMiddleware(f RequestIDFunc) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if requestID := net.RequestIDFromCtx(r.Context()); requestID != "" {
+				w.Header().Set(Header.XRequestID, requestID)
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -33,6 +34,8 @@ func RequestIDMiddleware(f RequestIDFunc) func(http.Handler) http.Handler {
 			} else {
 				requestID = net.NewRequestID()
 			}
+
+			w.Header().Set(Header.XRequestID, requestID)
 
 			ctx := net.WithRequestID(r.Context(), requestID)
 			next.ServeHTTP(w, r.WithContext(ctx))
