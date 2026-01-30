@@ -4,6 +4,9 @@ How to release a new version:
 - Manually release new version.
 
 ## [Unreleased]
+### Changed
+- In `http.RequestIDMiddleware`, the `request_id` is now always set in the response header.
+
 
 ## [0.8.0] - 2024-11-14
 ### Added
