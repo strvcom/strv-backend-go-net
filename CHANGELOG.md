@@ -8,6 +8,9 @@ How to release a new version:
 - In `http.RequestIDMiddleware`, the `request_id` is now always set in the response header.
 
 
+### Added
+- package `http/param`: can parse form data into embedded structs.
+
 ## [0.8.0] - 2024-11-14
 ### Added
 - package `http/param`: can parse into embedded structs.
