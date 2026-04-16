@@ -69,16 +69,16 @@ func WriteErrorResponse(
 	)
 	w.WriteHeader(statusCode)
 
+	if rw, ok := w.(*ResponseWriter); ok {
+		rw.SetErrorObject(o.Err)
+	}
+
 	if o.EncodeFunc == nil {
 		return nil
 	}
 
 	if err := o.EncodeFunc(w, o); err != nil {
 		return fmt.Errorf("response encoding: %w", err)
-	}
-
-	if rw, ok := w.(*ResponseWriter); ok {
-		rw.SetErrorObject(o.Err)
 	}
 
 	return nil
