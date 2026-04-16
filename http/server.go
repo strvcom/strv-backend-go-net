@@ -91,7 +91,7 @@ func (s *Server) Run(ctx context.Context) error {
 	}
 
 	s.logger.With(
-		slog.Duration("timeout", *s.shutdownTimeout),
+		slog.Duration("timeout", defaultTo(s.shutdownTimeout, defaultShutdownTimeout)),
 	).DebugContext(ctx, "waiting for server shutdown...")
 
 	if err := s.server.Shutdown(context.Background()); err != nil {
@@ -103,7 +103,7 @@ func (s *Server) Run(ctx context.Context) error {
 	select {
 	case <-s.waitForShutdown:
 		return nil
-	case <-time.After(*defaultTo(s.shutdownTimeout, &defaultShutdownTimeout)):
+	case <-time.After(defaultTo(s.shutdownTimeout, defaultShutdownTimeout)):
 		return neterrors.ErrShutdownTimeout
 	}
 }
@@ -117,7 +117,7 @@ func (s *Server) beforeShutdown() {
 	wg := &sync.WaitGroup{}
 	wg.Add(len(s.doBeforeShutdown))
 
-	ctx, cancel := context.WithTimeout(context.Background(), *defaultTo(s.shutdownTimeout, &defaultShutdownTimeout))
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTo(s.shutdownTimeout, defaultShutdownTimeout))
 	defer cancel()
 
 	for _, f := range s.doBeforeShutdown {
