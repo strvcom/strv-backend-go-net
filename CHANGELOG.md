@@ -9,6 +9,7 @@ How to release a new version:
 
 ### Fixed
 - `duration_ms` field in logging middleware now correctly logs milliseconds.
+- HTTP server shuts down after timeout (and doesn't block indefinitely), even with hanging connections.
 
 ## [0.8.0] - 2024-11-14
 ### Added

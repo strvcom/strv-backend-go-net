@@ -90,11 +90,18 @@ func (s *Server) Run(ctx context.Context) error {
 		).InfoContext(ctx, "server stopped: signal received", slog.Any("error", neterrors.ErrServerInterrupted))
 	}
 
+	timeout := defaultTo(s.shutdownTimeout, defaultShutdownTimeout)
 	s.logger.With(
-		slog.Duration("timeout", defaultTo(s.shutdownTimeout, defaultShutdownTimeout)),
+		slog.Duration("timeout", timeout),
 	).DebugContext(ctx, "waiting for server shutdown...")
 
-	if err := s.server.Shutdown(context.Background()); err != nil {
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	if err := s.server.Shutdown(ctxWithTimeout); err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			err = neterrors.ErrShutdownTimeout
+		}
 		s.logger.ErrorContext(ctx, "server shutdown", slog.Any("error", err))
 		return err
 	}
@@ -103,7 +110,7 @@ func (s *Server) Run(ctx context.Context) error {
 	select {
 	case <-s.waitForShutdown:
 		return nil
-	case <-time.After(defaultTo(s.shutdownTimeout, defaultShutdownTimeout)):
+	case <-ctxWithTimeout.Done():
 		return neterrors.ErrShutdownTimeout
 	}
 }
