@@ -7,6 +7,8 @@ How to release a new version:
 ### Changed
 - In `http.RequestIDMiddleware`, the `request_id` is now always set in the response header.
 
+### Fixed
+- `duration_ms` field in logging middleware now correctly logs milliseconds.
 
 ## [0.8.0] - 2024-11-14
 ### Added
