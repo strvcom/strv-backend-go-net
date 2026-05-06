@@ -103,6 +103,11 @@ func (s *Server) Run(ctx context.Context) error {
 			err = neterrors.ErrShutdownTimeout
 		}
 		s.logger.ErrorContext(ctx, "server shutdown", slog.Any("error", err))
+
+		if closeErr := s.server.Close(); closeErr != nil {
+			s.logger.ErrorContext(ctx, "server close", slog.Any("error", closeErr))
+		}
+
 		return err
 	}
 	defer s.logger.DebugContext(ctx, "server shutdown complete")
