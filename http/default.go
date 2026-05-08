@@ -1,7 +1,6 @@
 package http
 
 import (
-	"reflect"
 	"time"
 )
 
@@ -31,9 +30,9 @@ func defaultErrorOptions() ErrorResponseOptions {
 	}
 }
 
-func defaultTo[T any](value T, defaultValue T) T {
-	if reflect.ValueOf(value).IsNil() {
+func defaultTo[T any](value *T, defaultValue T) T {
+	if value == nil {
 		return defaultValue
 	}
-	return value
+	return *value
 }

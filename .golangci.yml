@@ -138,6 +138,7 @@ linters:
         linters:
           - gosec
           - funlen
+          - noctx
 formatters:
   enable:
     - gci

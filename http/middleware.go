@@ -152,7 +152,7 @@ func (r RequestData) LogValue() slog.Value {
 		slog.String("method", r.Method),
 		slog.String("path", r.Path),
 		slog.Int("status_code", r.ResponseStatusCode),
-		slog.Duration("duration_ms", r.Duration),
+		slog.Int64("duration_ms", r.Duration.Milliseconds()),
 	}
 	return slog.GroupValue(attr...)
 }
